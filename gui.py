@@ -2,6 +2,9 @@ import tkinter as tk
 # import pandas as pd
 
 
+FONT = "Comic Sans MS"
+
+
 class Gui(tk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -22,10 +25,10 @@ class Gui(tk.Frame):
     def frame_buttons(self):
         frm = tk.Frame(self.parent)
 
-        back_button = tk.Button(frm, text="Main Menu", command=self.parent.main_gui, font=("Arial", 25))
+        back_button = tk.Button(frm, text="Main Menu", command=self.parent.main_gui, font=(FONT, 25))
         back_button.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=50)
 
-        quit_button = tk.Button(frm, text="Quit", command=self.quit, font=("Arial", 25))
+        quit_button = tk.Button(frm, text="Quit", command=self.quit, font=(FONT, 25))
         quit_button.pack(expand=True, fill=tk.BOTH, side=tk.RIGHT, padx=50, pady=50)
 
         return frm
@@ -42,16 +45,18 @@ class MainGui(Gui):
 
     # creates the buttons for inventory, orders, requisitions, audits, and quitting the program
     def buttons(self):
-        tk.Button(self, text="Quit", command=self.quit, font=("Arial", 25)) \
-            .grid(row=2, column=0, columnspan=2, sticky=tk.NSEW, padx=50, pady=50)
-        tk.Button(self, text="Current Inventory", command=lambda: self.parent.inv_gui(), font=("Arial", 25)) \
+        tk.Button(self, text="Quit", command=self.quit, font=(FONT, 25)) \
+            .grid(row=3, column=0, columnspan=2, sticky=tk.NSEW, padx=50, pady=50)
+        tk.Button(self, text="Current Inventory", command=lambda: self.parent.inv_gui(), font=(FONT, 25)) \
             .grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        tk.Button(self, text="Requisitions", command=lambda: self.parent.req_gui(), font=("Arial", 25)) \
+        tk.Button(self, text="Requisitions", command=lambda: self.parent.req_gui(), font=(FONT, 25)) \
             .grid(row=0, column=1, sticky=tk.NSEW, padx=50, pady=50)
-        tk.Button(self, text="Audit", command=lambda: self.parent.audit_gui(), font=("Arial", 25)) \
+        tk.Button(self, text="Audit", command=lambda: self.parent.audit_gui(), font=(FONT, 25)) \
             .grid(row=1, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        tk.Button(self, text="Orders", command=lambda: self.parent.order_gui(), font=("Arial", 25)) \
+        tk.Button(self, text="Deliveries", command=lambda: self.parent.delivery_gui(), font=(FONT, 25)) \
             .grid(row=1, column=1, sticky=tk.NSEW, padx=50, pady=50)
+        tk.Button(self, text="Orders", command=lambda: self.parent.order_gui(), font=(FONT, 25)) \
+            .grid(row=2, column=0, sticky=tk.NSEW, padx=50, pady=50)
 
     # configures the grid of the parent widget for this frame
     def configure_parent(self):
@@ -116,7 +121,7 @@ class InventoryGui(Gui):
     # creates the listbox for the inventory gui
     def create_listbox(self):
         lb = tk.Listbox(self, listvariable=tk.StringVar(value=self.parent.inv["Name"].values.tolist()),
-                        font=("Arial", 20))
+                        font=(FONT, 20))
         lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
 
         lb.bind("<<ListboxSelect>>", lambda e: self.listbox_change(lb))
@@ -134,7 +139,7 @@ class InventoryGui(Gui):
 
         frame_entry.columnconfigure(0, weight=1)
 
-        self.item_quantity_label = tk.Label(frame_entry, text="Current Inventory: ", font=("Arial", 25))
+        self.item_quantity_label = tk.Label(frame_entry, text="Current Inventory: ", font=(FONT, 25))
         self.item_quantity_label.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.frame_on_order(frame_entry)
@@ -144,10 +149,10 @@ class InventoryGui(Gui):
         frame_oo = tk.Frame(frame)
         frame_oo.grid(row=1, column=0, sticky=tk.NSEW)
 
-        self.on_order_label = tk.Label(frame_oo, text="On Order: ", font=("Arial", 25))
+        self.on_order_label = tk.Label(frame_oo, text="On Order: ", font=(FONT, 25))
         self.on_order_label.pack(expand=True, side=tk.LEFT, padx=50, pady=50)
 
-        tk.Button(frame_oo, text="Go to Orders", command=self.parent.order_gui, font=("Arial", 25))\
+        tk.Button(frame_oo, text="Go to Orders", command=self.parent.order_gui, font=(FONT, 25))\
             .pack(expand=True, side=tk.LEFT, padx=50, pady=50)
 
     # define behavior for when listbox selection changes
@@ -159,7 +164,7 @@ class InventoryGui(Gui):
         self.on_order_label.configure(text="On Order: " + self.on_order.get())
 
     # TODO add an entry widget to search listbox (only show items that contain the string in the entry box?)
-    #  will also need to change how indexing in the dataframe is one if this is implemented - low priority
+    #  will also need to change how indexing in the dataframe is done if this is implemented - low priority
 
     # TODO add button to edit items. Need to be able to change each column of the dataframe. Store in a new dataframe,
     #  then overwrite old one (save backup of old csv?). Add a confirmation window. Make sure there aren't multiple
@@ -170,11 +175,13 @@ class ReqGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.req_list = []
+
         self.configure_parent()
         self.configure_self()
 
-        self.frame_buttons().grid(row=0, column=0, sticky=tk.NSEW)
-
+        self.frm_req = self.frame_req()
+        self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
         # TODO reqs gui widgets
 
     def configure_parent(self):
@@ -188,6 +195,40 @@ class ReqGui(Gui):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         # TODO configure req gui frame
+
+    def frame_req(self):
+        frm = tk.Frame(self)
+        frm.grid(row=0, column=0, sticky=tk.NSEW)
+
+        canvas = tk.Canvas()  # parent of entries
+
+        tk.Button(frm, text="Commit").grid(row=2, column=0, sticky=tk.NSEW)  # apply button - bottom row
+        tk.Button(frm, text="Add row", command=lambda e: self.add_entries(canvas)).grid(row=2, column=1, sticky=tk.NSEW)  # add row - bottom row
+        tk.Entry(frm).grid(row=0, column=0, sticky=tk.NSEW)  # date - top row
+
+        clicked = tk.StringVar()
+        options = [1, 2, 3, 4]
+        tk.OptionMenu(frm, clicked, *options).grid(row=0, column=1, sticky=tk.NSEW)  # department - top row
+
+        # TODO finish these widgets have a scrollbar
+
+        return frm
+
+    def edit_inventory(self):
+        pass
+        # TODO update inventory dataframe, add req to history
+
+    def add_entries(self, canvas):
+        frm = tk.Frame(canvas)
+        frm.pack(fill=tk.X, expand=True, side=tk.TOP)
+
+        tk.Entry(frm).grid(row=0, column=0, sticky=tk.NSEW)  # quantity
+        tk.Entry(frm).grid(row=0, column=1, sticky=tk.NSEW)  # item # (maybe make this a dropdown?)
+
+        self.req_list.append(["item #", "# of items"])  # TODO finish this
+        pass
+    # TODO have one csv with the list of dates, use that to get the file name for the corresponding req
+    #      use something similar for orders/audits?
 
 
 class AuditGui(Gui):
@@ -252,10 +293,10 @@ class AuditGui(Gui):
     # into the widget passed to the method as top
     def frame_entry(self, top, idx):
         text_var = tk.StringVar()
-        wid1 = tk.Label(top, text=self.parent.inv["Name"].iloc[idx], font=("Arial", 25), width=50)
-        wid2 = tk.Entry(top, font=("Arial", 25))
-        wid3 = tk.Entry(top, font=("Arial", 25))
-        wid4 = tk.Label(top, textvariable=text_var, font=("Arial", 25))
+        wid1 = tk.Label(top, text=self.parent.inv["Name"].iloc[idx], font=(FONT, 25), width=50)
+        wid2 = tk.Entry(top, font=(FONT, 25))
+        wid3 = tk.Entry(top, font=(FONT, 25))
+        wid4 = tk.Label(top, textvariable=text_var, font=(FONT, 25))
 
         wid1.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=5)
         wid2.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=5)
@@ -274,13 +315,6 @@ class AuditGui(Gui):
 class OrderGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
-
-        self.configure_parent()
-        self.configure_self()
-
-        self.create_listbox()
-
-        self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
         # TODO order widgets
 
     def configure_parent(self):
@@ -294,24 +328,48 @@ class OrderGui(Gui):
         self.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        # TODO configure order gui frame
+
+
+class DeliveryGui(Gui):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.configure_parent()
+        self.configure_self()
+
+        self.create_listbox()
+
+        self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
+
+    def configure_parent(self):
+        super().configure_parent()
+
+        self.parent.columnconfigure(0, weight=1)
+        self.parent.rowconfigure(0, weight=1)
+
+    def configure_self(self):
+        self.grid(row=0, column=0, sticky=tk.NSEW)
+
+        self.columnconfigure(0, weight=1)
 
         self.rowconfigure(0, weight=14)
         self.rowconfigure(1, weight=1)
-        # TODO configure order gui frame
 
     def create_listbox(self):
         list_var = []
-        keys = list(self.parent.orders.index)
+        keys = list(self.parent.deliveries.index)
         idx = 0
-        while idx <= self.parent.orders.shape[0] - 1:
+        while idx <= self.parent.deliveries.shape[0] - 1:
             key = keys[idx]
-            list_var.append(self.parent.orders["Company"][key].__str__() + ":      " +
-                            self.parent.orders["Name"][key].__str__() + "      " +
-                            self.parent.orders["Quantity Ordered"][key].__str__())
+            list_var.append(self.parent.deliveries["Company"][key].__str__() + ":      " +
+                            self.parent.deliveries["Name"][key].__str__() + "      " +
+                            self.parent.deliveries["Quantity Ordered"][key].__str__())
             # TODO align text properly by adding whitespace
             idx += 1
 
-        lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=("Arial", 20))
+        lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 20))
         lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
 
         lb.bind("<<ListboxSelect>>", lambda e: self.listbox_change(lb))

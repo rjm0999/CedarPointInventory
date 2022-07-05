@@ -7,7 +7,7 @@ class Root(tk.Tk):
         super().__init__()
 
         self.inv = pd.read_csv("Inventory.csv", index_col="Number")
-        self.orders = pd.read_csv("Orders.csv", index_col="Internal Product Number")
+        self.deliveries = pd.read_csv("Deliveries.csv", index_col="Internal Product Number")
 
         #  TODO make back button go to last screen instead of main menu
         #
@@ -51,7 +51,15 @@ class Root(tk.Tk):
 
     def order_gui(self):
         OrderGui(self)
-        # TODO order gui -- needs:
+        # TODO order gui -- needs: everything
+        #                          approval for large orders (absolute limit and % limit)
+
+    def delivery_gui(self):
+        DeliveryGui(self)
+        # TODO delivery gui -- needs: buttons to add to req (go to req screen with fields already filled)
+
+
+# TODO have an error screen that says "that's clear"
 
 
 root = Root()
