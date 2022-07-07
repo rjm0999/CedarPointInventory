@@ -6,8 +6,8 @@ class Root(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.inv = pd.read_csv("Inventory.csv", index_col="Number")
-        self.deliveries = pd.read_csv("Deliveries.csv", index_col="Internal Product Number")
+        self.inv = pd.read_csv("database/Inventory.csv", index_col="Number")
+        self.deliveries = pd.read_csv("database/Deliveries.csv", index_col="Internal Product Number")
 
         #  TODO make back button go to last screen instead of main menu
         #
@@ -20,6 +20,9 @@ class Root(tk.Tk):
         MainGui(self)
 
     def clear_grid(self):
+        """
+        Set all row and column weights in the grid of this widget to 0 in preparation for drawing guis
+        """
         g = self.grid_size()
 
         self.columnconfigure(0, weight=0)
@@ -29,7 +32,7 @@ class Root(tk.Tk):
             for i in range(1, g[0]):
                 self.columnconfigure(i, weight=0)
         if g[1] > 1:
-            for i in range(1, g[0]):
+            for i in range(1, g[1]):
                 self.rowconfigure(i, weight=0)
 
     def main_gui(self):
@@ -60,7 +63,6 @@ class Root(tk.Tk):
 
 
 # TODO have an error screen that says "that's clear"
-
 
 root = Root()
 root.mainloop()
