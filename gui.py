@@ -222,15 +222,15 @@ class ReqGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.req_list = []
+        self.req_dict = {}
         self.department = tk.StringVar()
-        self.entry_parent = None
+        self.entry_parent: tk.Widget = None
 
         self.configure_parent()
         self.configure_self()
 
-        self.buttons()
         self.frame_canvas()
+        self.buttons()
 
         self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
         # TODO reqs gui widgets
@@ -278,7 +278,7 @@ class ReqGui(Gui):
         self.dropdown(frame_buttons)
         tk.Button(frame_buttons, text="Commit", font=(FONT, 25))\
             .grid(row=2, column=0, sticky=tk.NSEW, padx=25, pady=25)
-        tk.Button(frame_buttons, text="Add Row", font=(FONT, 25))\
+        tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
             .grid(row=3, column=0, sticky=tk.NSEW, padx=25, pady=25)
         tk.Button(frame_buttons, text="History", font=(FONT, 25))\
             .grid(row=4, column=0, sticky=tk.NSEW, padx=25, pady=25)
@@ -287,8 +287,8 @@ class ReqGui(Gui):
         """
         Create dropdown selection for departments for requisitions gui
 
-        Parameters
-        ----------
+        Parameter
+        ---------
         frm : the parent frame to contain the dropdown
         """
         dept_list = []
@@ -304,22 +304,42 @@ class ReqGui(Gui):
         Create canvas to hold entry fields for requisitions gui
         """
         frame = tk.Frame(self)
-        self.entry_parent = tk.Frame(frame)
-        frame.grid(row=0, column=0, rowspan=5, sticky=tk.NSEW)
 
         canvas = tk.Canvas(frame)
         scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
 
+        self.entry_parent = tk.Frame(canvas)
+
         canvas.create_window(0, 0, anchor=tk.NW, window=self.entry_parent)
+        canvas.update_idletasks()
+
         canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set)
 
         canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
-        scroll.pack(fill=tk.Y, side=tk.RIGHT)
+        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=25, pady=25)
 
         self.add_row()
 
+        frame.grid(row=0, column=0, rowspan=5, sticky=tk.NSEW)
+
     def add_row(self):
         frm = tk.Frame(self.entry_parent)
+        item_num = tk.StringVar()
+        num_items = tk.StringVar()
+
+        frm.rowconfigure(0, weight=1)
+
+        frm.columnconfigure(0, weight=1)
+        frm.columnconfigure(1, weight=1)
+
+        tk.Entry(frm, textvariable=item_num, font=(FONT, 25)).grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=25)
+        tk.Entry(frm, textvariable=num_items, font=(FONT, 25)).grid(row=0, column=1, sticky=tk.NSEW, padx=25, pady=25)
+
+        frm.pack(expand=True, fill=tk.BOTH, side=tk.TOP)
+
+    def commit(self):
+        # TODO update dataframe with new reqs, add reqs to list of reqs
+        pass
 
     # TODO have one csv with the list of dates, use that to get the file name for the corresponding req
     #      use something similar for orders/audits?
@@ -358,9 +378,10 @@ class AuditGui(Gui):
 
         self.grid(row=0, column=0, sticky=tk.NSEW)
 
-    # creates a canvas to embed the audit frame in so a scroll bar can be added, then packs the canvas into a frame
-    # that is put into the grid of the main audit gui
     def canvas(self):
+        """
+        Create a canvas to embed a frame in, so a scroll bar can be added
+        """
         audit = tk.Frame(self)
 
         canvas = tk.Canvas(audit)
@@ -376,8 +397,14 @@ class AuditGui(Gui):
 
         audit.grid(row=0, column=0, sticky=tk.NSEW)
 
-    # contains a while loop that iterates through the inventory and calls frame_entry for each item
     def frame_audit(self, parent):
+        """
+        Iterate through the inventory and calls frame_entry for each item in the inventory
+
+        Parameter
+        ---------
+        parent : the parent widget of the frame where the entry and label widgets are embedded
+        """
         idx = 0
         frm = tk.Frame(parent)
 
@@ -389,9 +416,23 @@ class AuditGui(Gui):
 
         return frm
 
-    # creates a label, two entry fields, and another label for the inventory item at index idx and packs it
-    # into the widget passed to the method as top
     def frame_entry(self, top, idx):
+        """
+        Create two label and two entry widgets for the item at index idx in the inventory
+
+        Parameter
+        ---------
+        top - parent widget to pack the widgets in
+        idx - the integer index to use to get the row label
+
+        Return
+        ------
+        [wid1, wid2, wid3, text_var]
+        wid1 - a label widget with an item name
+        wid2 - an entry widget
+        wid3 - an entry widget
+        text_var - a tkinter.StringVar() object tied to a label widget, wid4
+        """
         text_var = tk.StringVar()
         wid1 = tk.Label(top, text=self.parent.inv["Name"].iloc[idx], font=(FONT, 25), width=50)
         wid2 = tk.Entry(top, font=(FONT, 25))
@@ -405,9 +446,11 @@ class AuditGui(Gui):
 
         return [wid1, wid2, wid3, text_var]
 
-    # creates a scroll bar with parent widget and controlling linked_widget
     @staticmethod
     def scrollbar(parent, linked_widget):
+        """
+        Create a scrollbar widget
+        """
         scroll = tk.Scrollbar(parent, orient=tk.VERTICAL, command=linked_widget.yview)
         return scroll
 
@@ -472,6 +515,9 @@ class DeliveryGui(Gui):
         self.rowconfigure(1, weight=1)
 
     def create_listbox(self):
+        """
+        Create a tkinter listbox
+        """
         list_var = []
         keys = self.parent.deliveries.index.tolist()
         idx = 0
