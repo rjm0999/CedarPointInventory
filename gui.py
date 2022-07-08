@@ -1,6 +1,7 @@
 import tkinter as tk
 import pandas as pd
 from datetime import date
+# TODO google api to connect to sheets
 
 from constants import FONT
 from constants import DEPARTMENTS
@@ -222,9 +223,10 @@ class ReqGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.req_dict = {}
+        self.req_list = []
+        self.var_list = []
         self.department = tk.StringVar()
-        self.entry_parent: tk.Widget = None
+        self.entry_parent = None
 
         self.configure_parent()
         self.configure_self()
@@ -274,14 +276,14 @@ class ReqGui(Gui):
         frame_buttons.columnconfigure(3, weight=1)
 
         tk.Label(frame_buttons, text=date.today().isoformat(), font=(FONT, 25))\
-            .grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=25)
+            .grid(row=0, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
         self.dropdown(frame_buttons)
-        tk.Button(frame_buttons, text="Commit", font=(FONT, 25))\
-            .grid(row=2, column=0, sticky=tk.NSEW, padx=25, pady=25)
+        tk.Button(frame_buttons, text="Commit", font=(FONT, 25), command=self.commit)\
+            .grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
         tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
-            .grid(row=3, column=0, sticky=tk.NSEW, padx=25, pady=25)
+            .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
         tk.Button(frame_buttons, text="History", font=(FONT, 25))\
-            .grid(row=4, column=0, sticky=tk.NSEW, padx=25, pady=25)
+            .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
 
     def dropdown(self, frm):
         """
@@ -309,37 +311,107 @@ class ReqGui(Gui):
         scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
 
         self.entry_parent = tk.Frame(canvas)
+        self.entry_parent.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
         canvas.create_window(0, 0, anchor=tk.NW, window=self.entry_parent)
         canvas.update_idletasks()
 
         canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set)
 
-        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
-        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=25, pady=25)
+        f = tk.Frame(frame)
+
+        item_num = tk.Label(f, text="Item Number", font=(FONT, 25))
+        item_num.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+        item_num.config(width=10)
+
+        item_name = tk.Label(f, text="Item Name", font=(FONT, 25))
+        item_name.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=5, pady=25)
+        item_name.config(width=10)
+
+        item_quan = tk.Label(f, text="Item Quantity", font=(FONT, 25))
+        item_quan.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+        item_quan.config(width=10)
+
+        f.pack(expand=False, fill=tk.BOTH, side=tk.TOP, padx=25, pady=25)
 
         self.add_row()
 
-        frame.grid(row=0, column=0, rowspan=5, sticky=tk.NSEW)
+        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=25, pady=25)
+
+        frame.grid(row=0, column=0,  sticky=tk.NSEW)
 
     def add_row(self):
+        """
+        Add a row to the req gui and handle input to the entry widgets
+        """
         frm = tk.Frame(self.entry_parent)
-        item_num = tk.StringVar()
-        num_items = tk.StringVar()
+
+        item_num = tk.StringVar(self.parent)
+        item_name = tk.StringVar(self.parent, value="Unknown Item Number")
+        num_items = tk.StringVar(self.parent)
+
+        self.var_list.append((item_num, item_name, num_items))
 
         frm.rowconfigure(0, weight=1)
 
         frm.columnconfigure(0, weight=1)
         frm.columnconfigure(1, weight=1)
+        frm.columnconfigure(2, weight=1)
 
-        tk.Entry(frm, textvariable=item_num, font=(FONT, 25)).grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=25)
-        tk.Entry(frm, textvariable=num_items, font=(FONT, 25)).grid(row=0, column=1, sticky=tk.NSEW, padx=25, pady=25)
+        e1 = tk.Entry(frm, textvariable=item_num, font=(FONT, 15))
+        e1.grid(row=0, column=0, sticky=tk.NSEW, padx=(110, 75), pady=10)
+        e1.config(width=15)
+
+        l1 = tk.Label(frm, text=item_name.get(), font=(FONT, 15))
+        l1.grid(row=0, column=1, sticky=tk.NSEW, padx=0, pady=10)
+        l1.config(width=40)
+
+        e2 = tk.Entry(frm, textvariable=num_items, font=(FONT, 15))
+        e2.grid(row=0, column=2, sticky=tk.NSEW, padx=(65, 100), pady=10)
+        e2.config(width=15)
+
+        item_num.trace('w', lambda e, f, g: self.item_num_change(e1, l1))
+        self.req_list.append((e1, l1, e2))
 
         frm.pack(expand=True, fill=tk.BOTH, side=tk.TOP)
 
     def commit(self):
-        # TODO update dataframe with new reqs, add reqs to list of reqs
-        pass
+        """
+        Update the dataframe with the information currently in the req
+        """
+        # TODO update dataframe with new req, add req to list of reqs
+        root = tk.Tk()
+        root.title("Confirmation Action")
+
+        txt = "Are you sure you want to complete this action? It cannot be undone."
+        label = tk.Label(root, text=txt, font=(FONT, 20))
+        label.grid(row=0, column=0, columnspan=2, sticky=tk.NSEW, padx=50, pady=50)
+
+        back = tk.Button(root, text="Back", font=(FONT, 15), command=root.destroy)
+        back.grid(row=1, column=0, sticky=tk.NSEW)
+
+        cont = tk.Button(root, text="That's clear", font=(FONT, 15), command=lambda: self.confirm(root))
+        cont.grid(row=1, column=1, sticky=tk.NSEW)
+
+    def confirm(self, root):
+        """
+        redraw the req gui and destroy the confirmation window
+        """
+        self.parent.req_gui()
+        root.destroy()
+
+    def item_num_change(self, e1, l1):
+        """
+        Define behavior for when user input in an entry is changed
+        :param e1: the entry widget to define behavior for
+        :param l1: the label widget to change the display of
+        """
+        if e1.get() != "":
+            try:
+                l1.config(text=self.parent.inv["Name"][int(e1.get())])
+            except KeyError:
+                l1.config(text="Unknown Item Number")
 
     # TODO have one csv with the list of dates, use that to get the file name for the corresponding req
     #      use something similar for orders/audits?
@@ -387,7 +459,7 @@ class AuditGui(Gui):
         canvas = tk.Canvas(audit)
         scroll = self.scrollbar(audit, canvas)
 
-        canvas.create_window(0, 0, anchor=tk.NW, window=self.frame_audit(audit))
+        canvas.create_window(0, 0, anchor=tk.NW, window=self.frame_audit(canvas))
         canvas.update_idletasks()
 
         canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set)
