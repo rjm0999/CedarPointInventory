@@ -1,7 +1,12 @@
 import tkinter as tk
 import pandas as pd
 from datetime import date
+# import googleapiclient
 # TODO google api to connect to sheets
+
+# google account info username: CedarPointInventory
+#                     password: CedarPoint2022
+#                     birthday: 1 January 1902
 
 from constants import FONT
 from constants import DEPARTMENTS
