@@ -1,5 +1,4 @@
 from gui import *
-import pandas as pd
 
 
 class Root(tk.Tk):
@@ -8,6 +7,10 @@ class Root(tk.Tk):
 
         self.inv = pd.read_csv("database/Inventory.csv", index_col="Number")
         self.deliveries = pd.read_csv("database/Deliveries.csv", index_col="Internal Product Number")
+        try:
+            self.reqs = pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
+        except FileNotFoundError:
+            self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")
 
         #  TODO make back button go to last screen instead of main menu
         #
@@ -44,8 +47,8 @@ class Root(tk.Tk):
 
     def req_gui(self):
         ReqGui(self)
-        # TODO req gui -- needs: ability to enter a req
-        #                        gui-dataframe interaction
+        # TODO req gui -- needs: gui-dataframe interaction
+        #                        view old reqs
 
     def audit_gui(self):
         AuditGui(self)
@@ -55,7 +58,7 @@ class Root(tk.Tk):
     def order_gui(self):
         OrderGui(self)
         # TODO order gui -- needs: everything
-        #                          approval for large orders (absolute limit and % limit)
+        #                          approval for large orders (absolute limit and % limit?)
 
     def delivery_gui(self):
         DeliveryGui(self)
