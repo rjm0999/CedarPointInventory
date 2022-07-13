@@ -1,5 +1,5 @@
 import tkinter as tk
-import pandas as pd
+import pandas as pd  # pandas has a pivot table method
 from datetime import date
 # import googleapiclient
 # TODO google api to connect to sheets
@@ -383,34 +383,26 @@ class ReqGui(Gui):
 
     def commit(self):
         """
-        Update the dataframe with the information currently in the req
+        Update the dataframe with the information currently in the req, clear current inputs by redrawing the gui
         """
-        # TODO update dataframe with new req, add req to list of reqs
-        root = tk.Tk()
-        root.title("Confirmation Action")
+        for i in self.var_list:
+            self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
+            department = self.department.get()
+            for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", " "]:
+                department = department.replace(j, "")
 
-        txt = "Are you sure you want to complete this action? It cannot be undone."
-        label = tk.Label(root, text=txt, font=(FONT, 20))
-        label.grid(row=0, column=0, columnspan=2, sticky=tk.NSEW, padx=50, pady=50)
+            self.parent.reqs.loc[len(self.parent.reqs.index)] = [department, date.today().__str__(), i[0].get(),
+                                                                 i[2].get()]
+        self.parent.inv.to_csv("database/Inventory.csv")
+        self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
 
-        back = tk.Button(root, text="Back", font=(FONT, 15), command=root.destroy)
-        back.grid(row=1, column=0, sticky=tk.NSEW)
-
-        cont = tk.Button(root, text="That's clear", font=(FONT, 15), command=lambda: self.confirm(root))
-        cont.grid(row=1, column=1, sticky=tk.NSEW)
-
-    def confirm(self, root):
-        """
-        redraw the req gui and destroy the confirmation window
-        """
         self.parent.req_gui()
-        root.destroy()
 
     def item_num_change(self, e1, l1):
         """
         Define behavior for when user input in an entry is changed
         :param e1: the entry widget to define behavior for
-        :param l1: the label widget to change the display of
+        :param l1: the label widget to change
         """
         if e1.get() != "":
             try:
@@ -418,8 +410,7 @@ class ReqGui(Gui):
             except KeyError:
                 l1.config(text="Unknown Item Number")
 
-    # TODO have one csv with the list of dates, use that to get the file name for the corresponding req
-    #      use something similar for orders/audits?
+    # TODO be able to view req history, include pivot table type view to see usage by department
 
 
 class AuditGui(Gui):
