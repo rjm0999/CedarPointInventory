@@ -287,7 +287,7 @@ class ReqGui(Gui):
             .grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
         tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
             .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
-        tk.Button(frame_buttons, text="History", font=(FONT, 25))\
+        tk.Button(frame_buttons, text="History", font=(FONT, 25), command=self.parent.req_history_gui)\
             .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
 
     def dropdown(self, frm):
@@ -395,7 +395,7 @@ class ReqGui(Gui):
                                                                  i[2].get()]
         self.parent.inv.to_csv("database/Inventory.csv")
         self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
-
+        # TODO figure out why commit overwrites last req instead of adding to the list
         self.parent.req_gui()
 
     def item_num_change(self, e1, l1):
@@ -604,3 +604,127 @@ class DeliveryGui(Gui):
 
     def listbox_change(self, lb):
         pass
+
+
+class ReqHistoryGui(Gui):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.early = date(2000, 1, 1)
+        self.late = date(2100, 12, 31)
+
+        self.cb_item_num = []
+        self.cb_dept = []
+
+        self.lb = self.create_listbox()
+
+        self.configure_parent()
+        self.configure_self()
+
+        self.filters_frame().grid(row=0, column=1, sticky=tk.NSEW)
+        self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
+
+    def configure_parent(self):
+        """
+        Configure the grid of the parent widget for this frame
+        """
+        super().configure_parent()
+
+        self.parent.columnconfigure(0, weight=1)
+        self.parent.rowconfigure(0, weight=1)
+
+    def configure_self(self):
+        """
+        Configure the grid of this frame
+        """
+        self.grid(row=0, column=0, sticky=tk.NSEW)
+
+        self.columnconfigure(0, weight=3)
+        self.columnconfigure(0, weight=1)
+
+        self.rowconfigure(0, weight=14)
+        self.rowconfigure(1, weight=1)
+
+    def create_listbox(self):
+        """
+        Create a tkinter listbox
+        """
+        try:
+            self.lb.destroy()
+        except AttributeError:
+            print("attribute error")
+
+        list_var = []
+        keys = self.parent.reqs.index.tolist()
+        idx = 0
+        while idx <= self.parent.reqs.shape[0] - 1:
+            key = keys[idx]
+            list_var.append(self.parent.reqs["Item #"][key].__str__() + ":      " +
+                            self.parent.reqs["Item Quantity"][key].__str__() + "      " +
+                            self.parent.reqs["Department"][key].__str__() + "      " +
+                            self.parent.reqs["Date"][key].__str__())
+            # TODO align text properly by adding whitespace
+            idx += 1
+
+        lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 20))
+        lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
+
+        return lb
+
+    def filters_frame(self):
+        frm = tk.Frame(self)
+        frm.grid(row=0, column=1, sticky=tk.NSEW)
+
+        frm.columnconfigure(0, weight=1)
+
+        frm.rowconfigure(0, weight=1)
+        frm.rowconfigure(1, weight=1)
+        frm.rowconfigure(2, weight=1)
+
+        canvas1 = self.create_canvas(frm, "itemnum")
+        canvas1.grid(row=0, column=0, sticky=tk.NSEW)
+
+        canvas2 = self.create_canvas(frm, "dept")
+        canvas2.grid(row=1, column=0, sticky=tk.NSEW)
+
+        canvas3 = self.create_canvas(frm, "date")
+        canvas3.grid(row=2, column=0, sticky=tk.NSEW)
+
+        return frm
+
+    def create_canvas(self, parent, string):
+        frm = tk.Frame(parent)
+        frm2 = tk.Frame(frm)
+        canvas = tk.Canvas(frm)
+        scroll = tk.Scrollbar(frm, orient=tk.VERTICAL, command=canvas.yview)
+
+        self.create_widgets(frm2, string)
+
+        canvas.create_window(0, 0, anchor=tk.NW, window=frm2)
+        canvas.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set)
+
+        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=50)
+        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=50, pady=50)
+        # TODO figure out why canvas prints backwards
+        return frm
+
+    def create_widgets(self, parent, string):
+        if string == "itemnum":
+            idx = 0
+            while idx < len(self.parent.inv.index):
+                item_num = self.parent.inv.index.tolist()[idx]
+                self.cb_item_num.append(tk.BooleanVar())
+                text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
+                tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False).\
+                    pack(fill=tk.BOTH, expand=True)
+                idx += 1
+
+        elif string == "dept":
+            print("you forgot to program me, dum dum")
+
+        elif string == "date":
+            print("you forgot to program me, dum dum")
+
+        else:
+            print("you forgot to program me, dum dum")
