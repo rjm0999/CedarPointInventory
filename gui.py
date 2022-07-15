@@ -652,17 +652,33 @@ class ReqHistoryGui(Gui):
         try:
             self.lb.destroy()
         except AttributeError:
-            print("attribute error")
+            pass
 
         list_var = []
         keys = self.parent.reqs.index.tolist()
         idx = 0
         while idx <= self.parent.reqs.shape[0] - 1:
             key = keys[idx]
-            list_var.append(self.parent.reqs["Item #"][key].__str__() + ":      " +
-                            self.parent.reqs["Item Quantity"][key].__str__() + "      " +
-                            self.parent.reqs["Department"][key].__str__() + "      " +
-                            self.parent.reqs["Date"][key].__str__())
+            item = self.parent.reqs["Item #"][key].__str__()
+            while len(item) < 10:
+                item += " "
+
+            item += self.parent.inv["Name"][self.parent.reqs["Item #"][key]].__str__()
+            item = item[0:40]
+            while len(item) < 45:
+                item += " "
+
+            item += self.parent.reqs["Item Quantity"][key].__str__()
+            while len(item) < 55:
+                item += " "
+
+            item += self.parent.reqs["Department"][key].__str__()
+            while len(item) < 65:
+                item += " "
+
+            item += self.parent.reqs["Date"][key].__str__()
+
+            list_var.append(item)
             # TODO align text properly by adding whitespace
             idx += 1
 
@@ -681,21 +697,21 @@ class ReqHistoryGui(Gui):
         frm.rowconfigure(1, weight=1)
         frm.rowconfigure(2, weight=1)
 
-        canvas1 = self.create_canvas(frm, "itemnum")
+        canvas1 = self.create_canvas(frm, "itemnum", (50, 0))
         canvas1.grid(row=0, column=0, sticky=tk.NSEW)
 
-        canvas2 = self.create_canvas(frm, "dept")
+        canvas2 = self.create_canvas(frm, "dept", (50, 0))
         canvas2.grid(row=1, column=0, sticky=tk.NSEW)
 
-        canvas3 = self.create_canvas(frm, "date")
+        canvas3 = self.create_canvas(frm, "date", (50, 50))
         canvas3.grid(row=2, column=0, sticky=tk.NSEW)
 
         return frm
 
-    def create_canvas(self, parent, string):
+    def create_canvas(self, parent, string, pady):
         frm = tk.Frame(parent)
-        frm2 = tk.Frame(frm)
         canvas = tk.Canvas(frm)
+        frm2 = tk.Frame(canvas)
         scroll = tk.Scrollbar(frm, orient=tk.VERTICAL, command=canvas.yview)
 
         self.create_widgets(frm2, string)
@@ -704,9 +720,9 @@ class ReqHistoryGui(Gui):
         canvas.update_idletasks()
         canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set)
 
-        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=50)
-        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=50, pady=50)
-        # TODO figure out why canvas prints backwards
+        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=(pady[0], pady[1]))
+        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=50, pady=(pady[0], pady[1]))
+
         return frm
 
     def create_widgets(self, parent, string):
@@ -716,15 +732,21 @@ class ReqHistoryGui(Gui):
                 item_num = self.parent.inv.index.tolist()[idx]
                 self.cb_item_num.append(tk.BooleanVar())
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
-                tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False).\
-                    pack(fill=tk.BOTH, expand=True)
+                tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False,
+                               anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
 
         elif string == "dept":
-            print("you forgot to program me, dum dum")
+            idx = 0
+            while idx < len(DEPARTMENTS.index.tolist()):
+                self.cb_dept.append(tk.BooleanVar())
+                text = str(DEPARTMENTS.index.tolist()[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
+                tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=True, offvalue=False,
+                               anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
+                idx += 1
 
         elif string == "date":
-            print("you forgot to program me, dum dum")
+            print("you forgot to program me, dum dum (date)")
 
         else:
-            print("you forgot to program me, dum dum")
+            print("you forgot to program me, dum dum (" + string + ")")
