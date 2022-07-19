@@ -365,16 +365,16 @@ class ReqGui(Gui):
         frm.columnconfigure(2, weight=1)
 
         e1 = tk.Entry(frm, textvariable=item_num, font=(FONT, 15))
-        e1.grid(row=0, column=0, sticky=tk.NSEW, padx=(110, 75), pady=10)
-        e1.config(width=15)
+        e1.grid(row=0, column=0, sticky=tk.NSEW, padx=(113, 73), pady=10)
+        e1.config(width=17)
 
         l1 = tk.Label(frm, text=item_name.get(), font=(FONT, 15))
         l1.grid(row=0, column=1, sticky=tk.NSEW, padx=0, pady=10)
-        l1.config(width=40)
+        l1.config(width=43)
 
         e2 = tk.Entry(frm, textvariable=num_items, font=(FONT, 15))
-        e2.grid(row=0, column=2, sticky=tk.NSEW, padx=(65, 100), pady=10)
-        e2.config(width=15)
+        e2.grid(row=0, column=2, sticky=tk.NSEW, padx=(60, 100), pady=10)
+        e2.config(width=18)
 
         item_num.trace('w', lambda e, f, g: self.item_num_change(e1, l1))
         self.req_list.append((e1, l1, e2))
