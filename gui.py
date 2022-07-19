@@ -381,21 +381,58 @@ class ReqGui(Gui):
 
         frm.pack(expand=True, fill=tk.BOTH, side=tk.TOP)
 
+    def neg_item_quan(self):
+        for i in self.var_list:
+            if int(i[2].get()) < 0:
+                return True
+        return False
+
+    def check_blanks(self):
+        for i in self.var_list[0, -2]:
+            if (i[0] == "" and i[2] != "") or (i[2] == "" and i[0] != ""):
+                return True
+        return False
+
     def commit(self):
         """
         Update the dataframe with the information currently in the req, clear current inputs by redrawing the gui
         """
+        if self.neg_item_quan():
+            print("Negative item quantity")
+            root = tk.Tk()
+            root.title("That's Clear")
+            tk.Label(root, text="Did you mean to enter a negative item quantity?", font=(FONT, 25)).pack()
+            frm = tk.Frame(root)
+            frm.pack()
+            tk.Button(frm, text="Yes", command=root.destroy).pack(side=tk.LEFT, padx=25, pady=25)
+            tk.Button(frm, text="No", command=self.actually_commit).pack(side=tk.RIGHT, padx=25, pady=25)
+
+        elif self.department.get() == "":
+            print("No department")
+            root = tk.Tk()
+            root.title = "That's Clear"
+        elif self.check_blanks():
+            print("No department")
+            root = tk.Tk()
+            root.title = "That's Clear"
+        else:
+            self.actually_commit()
+
+    def actually_commit(self):
+        print("No problem")
         for i in self.var_list:
             self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
             department = self.department.get()
-            for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", " "]:
-                department = department.replace(j, "")
+            department_num = self.department.get()
+        for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
+            department = department.replace(j, "")
+        for j in department:
+            department_num = department_num.replace(j, "")
 
-            self.parent.reqs.loc[len(self.parent.reqs.index)] = [department, date.today().__str__(), i[0].get(),
+            self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num, date.today().__str__(), i[0].get(),
                                                                  i[2].get()]
         self.parent.inv.to_csv("database/Inventory.csv")
         self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
-        # TODO figure out why commit overwrites last req instead of adding to the list
         self.parent.req_gui()
 
     def item_num_change(self, e1, l1):
@@ -410,7 +447,11 @@ class ReqGui(Gui):
             except KeyError:
                 l1.config(text="Unknown Item Number")
 
-    # TODO be able to view req history, include pivot table type view to see usage by department
+    def daily_stocking(self):
+        # TODO automatically add daily stocking items to a req, user just has to input quantities
+        pass
+
+    # TODO be able to view req history, include pivot table like view to see usage by department
 
 
 class AuditGui(Gui):
@@ -611,7 +652,7 @@ class ReqHistoryGui(Gui):
         super().__init__(parent)
 
         self.early = date(2000, 1, 1)
-        self.late = date(2100, 12, 31)
+        self.late = date(99999, 12, 31)
 
         self.cb_item_num = []
         self.cb_dept = []
@@ -728,8 +769,9 @@ class ReqHistoryGui(Gui):
     def create_widgets(self, parent, string):
         if string == "itemnum":
             idx = 0
+            item_num_list = self.parent.inv.index.tolist()
             while idx < len(self.parent.inv.index):
-                item_num = self.parent.inv.index.tolist()[idx]
+                item_num = item_num_list[idx]
                 self.cb_item_num.append(tk.BooleanVar())
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
                 tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False,
@@ -738,9 +780,10 @@ class ReqHistoryGui(Gui):
 
         elif string == "dept":
             idx = 0
+            depts_list = DEPARTMENTS.index.tolist()
             while idx < len(DEPARTMENTS.index.tolist()):
                 self.cb_dept.append(tk.BooleanVar())
-                text = str(DEPARTMENTS.index.tolist()[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
+                text = str(depts_list[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
                 tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=True, offvalue=False,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
