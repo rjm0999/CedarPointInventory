@@ -134,8 +134,6 @@ class InventoryGui(Gui):
         self.frame_entry()
         self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
 
-        # TODO Inventory gui widgets
-
     def configure_parent(self):
         """
         Configure the parent widget's grid for this gui
@@ -147,7 +145,6 @@ class InventoryGui(Gui):
  
         self.parent.rowconfigure(0, weight=14)
         self.parent.rowconfigure(1, weight=1)
-        # TODO configure root for inventory gui frame
 
     def configure_self(self):
         """
@@ -164,8 +161,11 @@ class InventoryGui(Gui):
         """
         Create a tkinter.Listbox widget for the inventory gui
         """
-        lb = tk.Listbox(self, listvariable=tk.StringVar(value=self.parent.inv["Name"].values.tolist()),
-                        font=(FONT, 25))
+        list_var = []
+        for i in self.parent.inv.index.tolist():
+            list_var.append(self.parent.inv["Name"][i] + " : " + self.parent.inv["Unit"][i])
+
+        lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
         lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
         lb.config(width=0)
 
@@ -240,7 +240,6 @@ class ReqGui(Gui):
         self.buttons()
 
         self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
-        # TODO reqs gui widgets
 
     def configure_parent(self):
         """
@@ -252,7 +251,6 @@ class ReqGui(Gui):
 
         self.parent.rowconfigure(0, weight=14)
         self.parent.rowconfigure(1, weight=1)
-        # TODO configure root for req gui frame
 
     def configure_self(self):
         """
@@ -260,11 +258,10 @@ class ReqGui(Gui):
         """
         self.grid(row=0, column=0, sticky=tk.NSEW)
 
-        self.columnconfigure(0, weight=2)
+        self.columnconfigure(0, weight=4)
         self.columnconfigure(1, weight=1)
 
         self.rowconfigure(0, weight=1)
-        # TODO configure req gui frame
 
     def buttons(self):
         """
@@ -274,21 +271,23 @@ class ReqGui(Gui):
 
         frame_buttons.grid(row=0, column=1, sticky=tk.NSEW)
 
-        frame_buttons.rowconfigure(0, weight=1)
         frame_buttons.columnconfigure(0, weight=1)
-        frame_buttons.columnconfigure(1, weight=1)
-        frame_buttons.columnconfigure(2, weight=1)
-        frame_buttons.columnconfigure(3, weight=1)
+
+        frame_buttons.rowconfigure(0, weight=1)
+        frame_buttons.rowconfigure(1, weight=1)
+        frame_buttons.rowconfigure(2, weight=1)
+        frame_buttons.rowconfigure(3, weight=1)
+        frame_buttons.rowconfigure(4, weight=1)
 
         tk.Label(frame_buttons, text=date.today().isoformat(), font=(FONT, 25))\
-            .grid(row=0, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
+            .grid(row=0, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         self.dropdown(frame_buttons)
         tk.Button(frame_buttons, text="Commit", font=(FONT, 25), command=self.commit)\
-            .grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
+            .grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
-            .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
+            .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         tk.Button(frame_buttons, text="History", font=(FONT, 25), command=self.parent.req_history_gui)\
-            .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 0), pady=25)
+            .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
 
     def dropdown(self, frm):
         """
@@ -303,8 +302,8 @@ class ReqGui(Gui):
             dept_list.append(str(i) + " - " + DEPARTMENTS["Dept"][i])
 
         dd = tk.OptionMenu(frm, self.department, *dept_list)
-        dd.config(font=(FONT, 25), width=15)
-        dd.grid(row=1, column=0, sticky=tk.NSEW, padx=25, pady=25)
+        dd.config(font=(FONT, 25), width=18)
+        dd.grid(row=1, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
 
     def frame_canvas(self):
         """
@@ -321,23 +320,23 @@ class ReqGui(Gui):
         canvas.create_window(0, 0, anchor=tk.NW, window=self.entry_parent)
         canvas.update_idletasks()
 
-        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set)
+        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set, highlightthickness=0)
 
-        f = tk.Frame(frame)
+        f = tk.Frame(self.entry_parent)
 
         item_num = tk.Label(f, text="Item Number", font=(FONT, 25))
-        item_num.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-        item_num.config(width=10)
+        item_num.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=5, pady=25)
+        item_num.config(width=11)
 
         item_name = tk.Label(f, text="Item Name", font=(FONT, 25))
-        item_name.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=5, pady=25)
-        item_name.config(width=10)
+        item_name.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, pady=25)
+        item_name.config(width=35)
 
         item_quan = tk.Label(f, text="Item Quantity", font=(FONT, 25))
-        item_quan.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-        item_quan.config(width=10)
+        item_quan.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=5, pady=25)
+        item_quan.config(width=15)
 
-        f.pack(expand=False, fill=tk.BOTH, side=tk.TOP, padx=25, pady=25)
+        f.pack(expand=True, fill=tk.BOTH, side=tk.TOP, padx=25, pady=25)
 
         self.add_row()
 
@@ -365,16 +364,16 @@ class ReqGui(Gui):
         frm.columnconfigure(2, weight=1)
 
         e1 = tk.Entry(frm, textvariable=item_num, font=(FONT, 15))
-        e1.grid(row=0, column=0, sticky=tk.NSEW, padx=(113, 73), pady=10)
-        e1.config(width=17)
+        e1.grid(row=0, column=0, padx=5, pady=10)
+        e1.config(width=11)
 
         l1 = tk.Label(frm, text=item_name.get(), font=(FONT, 15))
-        l1.grid(row=0, column=1, sticky=tk.NSEW, padx=0, pady=10)
-        l1.config(width=43)
+        l1.grid(row=0, column=1, pady=10)
+        l1.config(width=45)
 
         e2 = tk.Entry(frm, textvariable=num_items, font=(FONT, 15))
-        e2.grid(row=0, column=2, sticky=tk.NSEW, padx=(60, 100), pady=10)
-        e2.config(width=18)
+        e2.grid(row=0, column=2, padx=5, pady=10)
+        e2.config(width=15)
 
         item_num.trace('w', lambda e, f, g: self.item_num_change(e1, l1))
         self.req_list.append((e1, l1, e2))
@@ -383,22 +382,25 @@ class ReqGui(Gui):
 
     def neg_item_quan(self):
         for i in self.var_list:
-            if int(i[2].get()) < 0:
-                return True
+            try:
+                if int(i[2].get()) < 0:
+                    return True
+            except ValueError:
+                continue
         return False
 
     def check_blanks(self):
-        for i in self.var_list[0, -2]:
-            if (i[0] == "" and i[2] != "") or (i[2] == "" and i[0] != ""):
+        for i in self.var_list:
+            if (i[0].get() == "" and i[2].get() != "") or (i[2].get() == "" and i[0].get() != ""):
                 return True
         return False
 
     def commit(self):
         """
-        Update the dataframe with the information currently in the req, clear current inputs by redrawing the gui
+        check inputs for errors (negative item quantity, no department selected, blank item number or quantity) and
+        displays an appropriate error message, if applicable, call actually_commit if no errors are detected
         """
         if self.neg_item_quan():
-            print("Negative item quantity")
             root = tk.Tk()
             root.title("That's Clear")
             tk.Label(root, text="Did you mean to enter a negative item quantity?", font=(FONT, 25)).pack()
@@ -411,26 +413,37 @@ class ReqGui(Gui):
             print("No department")
             root = tk.Tk()
             root.title = "That's Clear"
+            tk.Label(root, text="Please choose the department the items are being signed out to.", font=(FONT, 25))\
+                .pack(padx=25, pady=25)
+            tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
+
         elif self.check_blanks():
-            print("No department")
+            print("Mismatched blanks")
             root = tk.Tk()
             root.title = "That's Clear"
+            tk.Label(root, text="You entered a line with either an item number and no quantity, or a quantity, but no"
+                                "item number.", font=(FONT, 25)).pack(padx=25, pady=25)
+            tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
         else:
             self.actually_commit()
 
     def actually_commit(self):
+        """
+        add current input as a new req and updates both the inventory and req history
+        """
         print("No problem")
         for i in self.var_list:
-            self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
-            department = self.department.get()
-            department_num = self.department.get()
-        for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
-            department = department.replace(j, "")
-        for j in department:
-            department_num = department_num.replace(j, "")
+            if i[2].get() != "" and i[0].get() != "":
+                self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
+                department = self.department.get()
+                department_num = self.department.get()
+                for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
+                    department = department.replace(j, "")
+                for j in department:
+                    department_num = department_num.replace(j, "")
 
-            self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num, date.today().__str__(), i[0].get(),
-                                                                 i[2].get()]
+                self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num, date.today().__str__(), i[0].get(),
+                                                                         i[2].get()]
         self.parent.inv.to_csv("database/Inventory.csv")
         self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
         self.parent.req_gui()
@@ -652,7 +665,7 @@ class ReqHistoryGui(Gui):
         super().__init__(parent)
 
         self.early = date(2000, 1, 1)
-        self.late = date(99999, 12, 31)
+        self.late = date(9999, 12, 31)
 
         self.cb_item_num = []
         self.cb_dept = []
@@ -720,7 +733,6 @@ class ReqHistoryGui(Gui):
             item += self.parent.reqs["Date"][key].__str__()
 
             list_var.append(item)
-            # TODO align text properly by adding whitespace
             idx += 1
 
         lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 20))
@@ -772,12 +784,13 @@ class ReqHistoryGui(Gui):
             item_num_list = self.parent.inv.index.tolist()
             while idx < len(self.parent.inv.index):
                 item_num = item_num_list[idx]
-                self.cb_item_num.append(tk.BooleanVar())
+                bool_var = tk.BooleanVar()
+                self.cb_item_num.append(bool_var)
+                bool_var.trace_add("write", lambda e, f, g: self.bool_change(e))
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
                 tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
-
         elif string == "dept":
             idx = 0
             depts_list = DEPARTMENTS.index.tolist()
@@ -793,3 +806,11 @@ class ReqHistoryGui(Gui):
 
         else:
             print("you forgot to program me, dum dum (" + string + ")")
+
+    def bool_change(self, boo):
+        for i in self.cb_item_num:
+            print(type(i))
+        print(type(boo))
+        print(self.parent.inv.at["Name", self.parent.inv.index.tolist()[self.cb_item_num.index(boo)]] + " changed to "
+              + boo.get())
+        # FIXME
