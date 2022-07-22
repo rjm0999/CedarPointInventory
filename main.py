@@ -1,3 +1,6 @@
+import tkinter.font
+
+import constants
 from gui import *
 
 
@@ -5,12 +8,16 @@ class Root(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        self.inv = pd.read_csv("database/Inventory.csv", index_col="Number")
-        self.deliveries = pd.read_csv("database/Deliveries.csv", index_col="Internal Product Number")
+        types_dict = {"Name": str, "Description": str, "Quantity": int, "Unit": str}
+        self.inv = pd.read_csv("database/Inventory.csv", index_col="Number").astype(dtype=types_dict, copy=False)
+
+        types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
         try:
-            self.reqs = pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
+            self.reqs = pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")\
+                .astype(dtype=types_dict, copy=False)
         except FileNotFoundError:
-            self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")
+            self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")\
+                .astype(dtype=types_dict, copy=False)
 
         #  TODO make back button go to last screen instead of main menu
         #
@@ -47,8 +54,6 @@ class Root(tk.Tk):
 
     def req_gui(self):
         ReqGui(self)
-        # TODO req gui -- needs: gui-dataframe interaction
-        #                        view old reqs
 
     def audit_gui(self):
         AuditGui(self)
@@ -64,8 +69,9 @@ class Root(tk.Tk):
         DeliveryGui(self)
         # TODO delivery gui -- needs: buttons to add to req (go to req screen with fields already filled)
 
+    def req_history_gui(self):
+        ReqHistoryGui(self)
 
-# TODO have an error screen that says "that's clear"
 
 root = Root()
 root.mainloop()
