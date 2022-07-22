@@ -442,8 +442,9 @@ class ReqGui(Gui):
                 for j in department:
                     department_num = department_num.replace(j, "")
 
-                self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num, date.today().__str__(), i[0].get(),
-                                                                         i[2].get()]
+                self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
+                                                                         str(date.toordinal(date.today())),
+                                                                         i[0].get(), i[2].get()]
         self.parent.inv.to_csv("database/Inventory.csv")
         self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
         self.parent.req_gui()
@@ -592,7 +593,6 @@ class OrderGui(Gui):
 
         self.parent.columnconfigure(0, weight=1)
         self.parent.rowconfigure(0, weight=1)
-        # TODO configure root for order gui frame
 
     def configure_self(self):
         """
@@ -648,7 +648,6 @@ class DeliveryGui(Gui):
             list_var.append(self.parent.deliveries["Company"][key].__str__() + ":      " +
                             self.parent.deliveries["Name"][key].__str__() + "      " +
                             self.parent.deliveries["Quantity Ordered"][key].__str__())
-            # TODO align text properly by adding whitespace
             idx += 1
 
         lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 20))
@@ -668,7 +667,9 @@ class ReqHistoryGui(Gui):
         self.late = date(9999, 12, 31)
 
         self.cb_item_num = []
+        self.cb_all_items = tk.BooleanVar()
         self.cb_dept = []
+        self.cb_all_depts = tk.BooleanVar()
 
         self.lb = self.create_listbox()
 
@@ -712,27 +713,53 @@ class ReqHistoryGui(Gui):
         keys = self.parent.reqs.index.tolist()
         idx = 0
         while idx <= self.parent.reqs.shape[0] - 1:
-            key = keys[idx]
-            item = self.parent.reqs["Item #"][key].__str__()
-            while len(item) < 10:
-                item += " "
+            key = int(keys[idx])
+            try:
+                if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
+                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Department"][key])].get():
+                    item = str(self.parent.reqs["Item #"][key])
+                    while len(item) < 10:
+                        item += " "
 
-            item += self.parent.inv["Name"][self.parent.reqs["Item #"][key]].__str__()
-            item = item[0:40]
-            while len(item) < 45:
-                item += " "
+                    item += str(self.parent.inv["Name"][self.parent.reqs["Item #"][key]])
+                    item = item[0:40]
+                    while len(item) < 45:
+                        item += " "
 
-            item += self.parent.reqs["Item Quantity"][key].__str__()
-            while len(item) < 55:
-                item += " "
+                    item += str(self.parent.reqs["Item Quantity"][key])
+                    while len(item) < 55:
+                        item += " "
 
-            item += self.parent.reqs["Department"][key].__str__()
-            while len(item) < 65:
-                item += " "
+                    item += str(self.parent.reqs["Department"][key])
+                    while len(item) < 65:
+                        item += " "
 
-            item += self.parent.reqs["Date"][key].__str__()
+                    item += str(date.fromordinal(self.parent.reqs["Date"][key]))
 
-            list_var.append(item)
+                    list_var.append(item)
+
+            except IndexError:
+                item = str(self.parent.reqs["Item #"][key])
+                while len(item) < 10:
+                    item += " "
+
+                item += str(self.parent.inv["Name"][self.parent.reqs["Item #"][key]])
+                item = item[0:40]
+                while len(item) < 45:
+                    item += " "
+
+                item += str(self.parent.reqs["Item Quantity"][key])
+                while len(item) < 55:
+                    item += " "
+
+                item += str(self.parent.reqs["Department"][key])
+                while len(item) < 65:
+                    item += " "
+
+                item += str(date.fromordinal(self.parent.reqs["Date"][key]))
+
+                list_var.append(item)
+
             idx += 1
 
         lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 20))
@@ -780,24 +807,36 @@ class ReqHistoryGui(Gui):
 
     def create_widgets(self, parent, string):
         if string == "itemnum":
+            all_items = tk.Checkbutton(parent, text="<Select/Deselect All>", variable=self.cb_all_items, onvalue=False,
+                                       offvalue=True, anchor=tk.W, font=(FONT, 10))
+            all_items.pack(fill=tk.BOTH, expand=True)
+            self.cb_all_items.trace_add("write", lambda e, f, g: self.trace_all(self.cb_all_items, self.cb_item_num))
+
             idx = 0
             item_num_list = self.parent.inv.index.tolist()
             while idx < len(self.parent.inv.index):
                 item_num = item_num_list[idx]
-                bool_var = tk.BooleanVar()
-                self.cb_item_num.append(bool_var)
-                bool_var.trace_add("write", lambda e, f, g: self.bool_change(e))
+                boo = tk.BooleanVar()
+                self.cb_item_num.append(boo)
+                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_item_num))
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
-                tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=True, offvalue=False,
+                tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
         elif string == "dept":
+            all_depts = tk.Checkbutton(parent, text="<Select/Deselect All>", variable=self.cb_all_depts, onvalue=False,
+                                       offvalue=True, anchor=tk.W, font=(FONT, 10))
+            all_depts.pack(fill=tk.BOTH, expand=True)
+            self.cb_all_depts.trace_add("write", lambda e, f, g: self.trace_all(self.cb_all_depts, self.cb_dept))
+
             idx = 0
             depts_list = DEPARTMENTS.index.tolist()
             while idx < len(DEPARTMENTS.index.tolist()):
-                self.cb_dept.append(tk.BooleanVar())
+                boo = tk.BooleanVar()
+                self.cb_dept.append(boo)
+                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_dept))
                 text = str(depts_list[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
-                tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=True, offvalue=False,
+                tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
 
@@ -807,10 +846,17 @@ class ReqHistoryGui(Gui):
         else:
             print("you forgot to program me, dum dum (" + string + ")")
 
-    def bool_change(self, boo):
-        for i in self.cb_item_num:
-            print(type(i))
-        print(type(boo))
-        print(self.parent.inv.at["Name", self.parent.inv.index.tolist()[self.cb_item_num.index(boo)]] + " changed to "
-              + boo.get())
-        # FIXME
+    def bool_change(self, boo, var_list):
+        temp_list = []
+        for i in var_list:
+            temp_list.append(str(i))
+        idx = temp_list.index(boo)
+
+        self.lb = self.create_listbox()
+
+    def trace_all(self, boo, var_list):
+        temp = boo.get()
+        for i in var_list:
+            i.trace_vdelete("w", i.trace_id)
+            i.set(temp)
+            i.trace_add("write", lambda e, f, g: self.bool_change(e, var_list))
