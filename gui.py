@@ -163,7 +163,8 @@ class InventoryGui(Gui):
         """
         list_var = []
         for i in self.parent.inv.index.tolist():
-            list_var.append(self.parent.inv["Name"][i] + " : " + self.parent.inv["Unit"][i])
+            list_var.append(self.parent.inv["Name"][i] + " : " + str(self.parent.inv["Quantity"][i])
+                            + " " + self.parent.inv["Unit"][i])
 
         lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
         lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
@@ -180,21 +181,22 @@ class InventoryGui(Gui):
         frame_entry.grid(row=0, column=1, sticky=tk.NSEW)
 
         frame_entry.rowconfigure(0, weight=1)
-        frame_entry.rowconfigure(1, weight=1)
-        frame_entry.rowconfigure(2, weight=1)
+        # frame_entry.rowconfigure(1, weight=1)
+        # frame_entry.rowconfigure(2, weight=1)
 
         frame_entry.columnconfigure(0, weight=1)
 
+        # self.awaiting_delivery_label = tk.Label(frame_entry, text="Awaiting Delivery: ", font=(FONT, 25))
+        # self.awaiting_delivery_label.grid(row=1, column=0, sticky=tk.NSEW, padx=50, pady=50)
+        # self.awaiting_delivery_label.config(width=1)
+
+        # deliveries = tk.Button(frame_entry, text="Go to Deliveries",
+        #                       command=self.parent.delivery_gui, font=(FONT, 25))
+        # deliveries.grid(row=2, column=0, sticky=tk.NSEW, padx=50, pady=50)
+
         self.item_quantity_label = tk.Label(frame_entry, text="Current Inventory: ", font=(FONT, 25))
         self.item_quantity_label.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        self.item_quantity_label.config(width=1)
-
-        self.awaiting_delivery_label = tk.Label(frame_entry, text="Awaiting Delivery: ", font=(FONT, 25))
-        self.awaiting_delivery_label.grid(row=1, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        self.awaiting_delivery_label.config(width=1)
-
-        deliveries = tk.Button(frame_entry, text="Go to Deliveries", command=self.parent.delivery_gui, font=(FONT, 25))
-        deliveries.grid(row=2, column=0, sticky=tk.NSEW, padx=50, pady=50)
+        self.item_quantity_label.config(width=18)
 
     def listbox_change(self, lb):
         """
@@ -206,15 +208,15 @@ class InventoryGui(Gui):
             the listbox widget to define behavior for
         """
         self.item_quantity.set(self.parent.inv["Quantity"][self.parent.inv.index.tolist()[lb.curselection()[0]]])
-        self.item_quantity_label.configure(text="Current Inventory: "+self.item_quantity.get())
+        self.item_quantity_label.configure(text="Current Inventory: " + self.item_quantity.get())
 
-        if self.parent.inv.index.tolist()[lb.curselection()[0]] in self.parent.deliveries.index.tolist():
-            self.awaiting_delivery.set(self.parent.deliveries["Quantity Ordered"]
-                                       [self.parent.inv.index.tolist()[lb.curselection()[0]]])
-        else:
-            self.awaiting_delivery.set("0")
+        # if self.parent.inv.index.tolist()[lb.curselection()[0]] in self.parent.deliveries.index.tolist():
+        #    self.awaiting_delivery.set(self.parent.deliveries["Quantity Ordered"]
+        #                               [self.parent.inv.index.tolist()[lb.curselection()[0]]])
+        # else:
+            # self.awaiting_delivery.set("0")
 
-        self.awaiting_delivery_label.configure(text="Awaiting Delivery: " + self.awaiting_delivery.get())
+        # self.awaiting_delivery_label.configure(text="Awaiting Delivery: " + self.awaiting_delivery.get())
 
     # TODO add an entry widget to search listbox (only show items that contain the string in the entry box?)
     #  will also need to change how indexing in the dataframe is done if this is implemented - low priority
@@ -222,6 +224,8 @@ class InventoryGui(Gui):
     # TODO add button to edit items. Need to be able to change each column of the dataframe. Store in a new dataframe,
     #  then overwrite old one (save backup of old csv?). Add a confirmation window. Make sure there aren't multiple
     #  items with the same number
+
+    # TODO Add usage for past 30 days and estimated time until we run out
 
 
 class ReqGui(Gui):
@@ -431,7 +435,6 @@ class ReqGui(Gui):
         """
         add current input as a new req and updates both the inventory and req history
         """
-        print("No problem")
         for i in self.var_list:
             if i[2].get() != "" and i[0].get() != "":
                 self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
@@ -612,7 +615,7 @@ class DeliveryGui(Gui):
         self.configure_parent()
         self.configure_self()
 
-        self.create_listbox()
+        #self.create_listbox()
 
         self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
 
@@ -663,13 +666,16 @@ class ReqHistoryGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.early = date(2000, 1, 1)
-        self.late = date(9999, 12, 31)
-
         self.cb_item_num = []
         self.cb_all_items = tk.BooleanVar()
         self.cb_dept = []
         self.cb_all_depts = tk.BooleanVar()
+
+        self.date_vars = [[tk.StringVar(), tk.StringVar(), tk.StringVar()],
+                          [tk.StringVar(), tk.StringVar(), tk.StringVar()]]
+        self.date_vals = [[range(1, 32), range(1, 13), range(2022, date.today().year + 1)],
+                          [range(1, 32), range(1, 13), range(2022, date.today().year + 1)]]
+        self.date_opts = [[None]*3]*2
 
         self.lb = self.create_listbox()
 
@@ -839,18 +845,47 @@ class ReqHistoryGui(Gui):
                 tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
-
         elif string == "date":
-            print("you forgot to program me, dum dum (date)")
+            frm = tk.Frame(parent)
 
+            opt1 = tk.OptionMenu(frm, self.date_vars[0][0], "Day", *self.date_vals[0][0], command=self.set_date)
+            opt1.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt1.config(width=5)
+
+            opt2 = tk.OptionMenu(frm, self.date_vars[0][1], "Month", *self.date_vals[0][1], command=self.set_date)
+            opt2.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt2.config(width=5)
+
+            opt3 = tk.OptionMenu(frm, self.date_vars[0][2], "Year", *self.date_vals[0][2], command=self.set_date)
+            opt3.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt3.config(width=5)
+
+            frm.pack(expand=True, fill=tk.BOTH, side=tk.TOP)
+
+            to = tk.Frame(parent)
+
+            opt4 = tk.OptionMenu(to, self.date_vars[1][0], "Day", *self.date_vals[1][0], command=self.set_date)
+            opt4.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt4.config(width=5)
+
+            opt5 = tk.OptionMenu(to, self.date_vars[1][1], "Month", *self.date_vals[1][1], command=self.set_date)
+            opt5.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt5.config(width=5)
+
+            opt6 = tk.OptionMenu(to, self.date_vars[1][2], "Year", *self.date_vals[1][2], command=self.set_date)
+            opt6.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            opt6.config(width=5)
+
+            to.pack(expand=True, fill=tk.BOTH, side=tk.BOTTOM)
         else:
             print("you forgot to program me, dum dum (" + string + ")")
 
     def bool_change(self, boo, var_list):
-        temp_list = []
-        for i in var_list:
-            temp_list.append(str(i))
-        idx = temp_list.index(boo)
+        # temp_list = []
+        # for i in var_list:
+        #     temp_list.append(str(i))
+        # idx = temp_list.index(boo)
+        # I don't remember what I was doing here. It seems to work fine without it
 
         self.lb = self.create_listbox()
 
@@ -859,4 +894,26 @@ class ReqHistoryGui(Gui):
         for i in var_list:
             i.trace_vdelete("w", i.trace_id)
             i.set(temp)
-            i.trace_add("write", lambda e, f, g: self.bool_change(e, var_list))
+            i.trace_id = i.trace_add("write", lambda e, f, g: self.bool_change(e, var_list))
+        self.lb = self.create_listbox()
+
+    def frame_buttons(self):
+        """
+        Create two buttons, one that closes the program and one that returns to the main menu, and pack them into a
+        frame
+
+        Returns
+        -------
+        Frm : tkinter.Frame
+            Frame containing the "Main Menu" and "Quit" buttons
+        """
+        frm = super().frame_buttons()
+
+        back_button = tk.Button(frm, text="Back", command=self.parent.req_gui, font=(FONT, 25))
+        back_button.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=50)
+        back_button.config(width=1)
+
+        return frm
+
+    def set_date(self):
+        pass
