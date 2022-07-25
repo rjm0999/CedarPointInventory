@@ -1,6 +1,3 @@
-import tkinter.font
-
-import constants
 from gui import *
 
 
@@ -71,6 +68,29 @@ class Root(tk.Tk):
 
     def req_history_gui(self):
         ReqHistoryGui(self)
+
+    def read_reqs(self):
+        i = 2022
+        years = []
+        while i < date.today().year:
+            years.append(i)
+            i += 1
+
+        indv_reqs = []
+        types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
+
+        for i in years:
+            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
+                             .astype(dtype=types_dict, copy=False))
+
+        try:
+            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
+                             .astype(dtype=types_dict, copy=False))
+        except FileNotFoundError:
+            indv_reqs.append(pd.read_csv("history/reqs/list.csv", index_col="Req Number")
+                             .astype(dtype=types_dict, copy=False))
+
+        self.reqs = pd.concat(indv_reqs, keys=years)
 
 
 root = Root()
