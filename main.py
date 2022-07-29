@@ -1,4 +1,5 @@
 from gui import *
+import logging
 
 
 class Root(tk.Tk):
@@ -93,5 +94,30 @@ class Root(tk.Tk):
         self.reqs = pd.concat(indv_reqs, keys=years)
 
 
+def log_exceptions(exception, value, trace):
+    logging.exception("That's Clear")
+    root.quit()
+
+
+def logging_handler(top):
+    top.report_callback_exception = log_exceptions
+    filename = str(datetime.now())
+    for i in ["-", " ", ":", "."]:
+        filename = filename.replace(i, "")
+    filename = "error logs\\" + filename + ".txt"
+    logging.basicConfig(filename=filename, encoding="utf-8", level=logging.ERROR)
+
+
+def google_sheets_setup():
+    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name('database/cpip-357717-25269ee2bedf.json', scope)
+    client = gspread.authorize(creds)
+    return client.open("Cedar Point Park Services Warehouse Inventory")
+
+
 root = Root()
+logging_handler(root)
+sh = google_sheets_setup()
+
 root.mainloop()
