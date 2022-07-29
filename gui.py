@@ -1,7 +1,8 @@
 import tkinter as tk
 import pandas as pd  # pandas has a pivot table method
-from datetime import date
-# import googleapiclient
+from datetime import date, datetime
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 # TODO google api to connect to sheets
 
 # google account info username: CedarPointInventory
@@ -414,19 +415,17 @@ class ReqGui(Gui):
             tk.Button(frm, text="No", command=self.actually_commit).pack(side=tk.RIGHT, padx=25, pady=25)
 
         elif self.department.get() == "":
-            print("No department")
             root = tk.Tk()
-            root.title = "That's Clear"
+            root.title("That's Clear")
             tk.Label(root, text="Please choose the department the items are being signed out to.", font=(FONT, 25))\
                 .pack(padx=25, pady=25)
             tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
 
         elif self.check_blanks():
-            print("Mismatched blanks")
             root = tk.Tk()
-            root.title = "That's Clear"
+            root.title("That's Clear")
             tk.Label(root, text="You entered a line with either an item number and no quantity, or a quantity, but no"
-                                "item number.", font=(FONT, 25)).pack(padx=25, pady=25)
+                                " item number.", font=(FONT, 25)).pack(padx=25, pady=25)
             tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
         else:
             self.actually_commit()
@@ -435,22 +434,29 @@ class ReqGui(Gui):
         """
         add current input as a new req and updates both the inventory and req history
         """
-        for i in self.var_list:
-            if i[2].get() != "" and i[0].get() != "":
-                self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
-                department = self.department.get()
-                department_num = self.department.get()
-                for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
-                    department = department.replace(j, "")
-                for j in department:
-                    department_num = department_num.replace(j, "")
+        try:
+            for i in self.var_list:
+                if i[2].get() != "" and i[0].get() != "":
+                    self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
+                    department = self.department.get()
+                    department_num = self.department.get()
+                    for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
+                        department = department.replace(j, "")
+                    for j in department:
+                        department_num = department_num.replace(j, "")
 
-                self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
-                                                                         str(date.toordinal(date.today())),
-                                                                         i[0].get(), i[2].get()]
-        self.parent.inv.to_csv("database/Inventory.csv")
-        self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
-        self.parent.req_gui()
+                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
+                                                                            str(date.toordinal(date.today())),
+                                                                            i[0].get(), i[2].get()]
+            self.parent.inv.to_csv("database/Inventory.csv")
+            self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
+            self.parent.req_gui()
+        except KeyError:
+            root = tk.Tk()
+            root.title("That's Clear")
+            tk.Label(root, text="You've entered an invalid item number. Please try again"
+                                " item number.", font=(FONT, 25)).pack(padx=25, pady=25)
+            tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
 
     def item_num_change(self, e1, l1):
         """
