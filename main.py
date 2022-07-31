@@ -17,6 +17,7 @@ class Root(tk.Tk):
             self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")\
                 .astype(dtype=types_dict, copy=False)
 
+        self.sh = google_sheets_setup()
         #  TODO make back button go to last screen instead of main menu
         #
         #   self.last_gui = None
@@ -55,8 +56,7 @@ class Root(tk.Tk):
 
     def audit_gui(self):
         AuditGui(self)
-        # TODO audit gui -- needs: gui-dataframe interaction
-        #                          option to view old audits by date
+        # TODO audit gui -- needs: option to view old audits by date
 
     def order_gui(self):
         OrderGui(self)
@@ -81,7 +81,7 @@ class Root(tk.Tk):
         types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
 
         for i in years:
-            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
+            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(i) + ".csv", index_col="Req Number")
                              .astype(dtype=types_dict, copy=False))
 
         try:
@@ -94,7 +94,7 @@ class Root(tk.Tk):
         self.reqs = pd.concat(indv_reqs, keys=years)
 
 
-def log_exceptions(exception, value, trace):
+def log_exceptions():
     logging.exception("That's Clear")
     root.quit()
 
@@ -102,22 +102,20 @@ def log_exceptions(exception, value, trace):
 def logging_handler(top):
     top.report_callback_exception = log_exceptions
     filename = str(datetime.now())
-    for i in ["-", " ", ":", "."]:
+    for i in [" ", ":", "."]:
         filename = filename.replace(i, "")
     filename = "error logs\\" + filename + ".txt"
-    logging.basicConfig(filename=filename, encoding="utf-8", level=logging.ERROR)
+    logging.basicConfig(filename=filename, encoding="utf-8", level=logging.ERROR, )
 
 
 def google_sheets_setup():
-    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
              "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('database/cpip-357717-25269ee2bedf.json', scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_name("database/cpip-357717-25269ee2bedf.json", scope)
     client = gspread.authorize(creds)
-    return client.open("Cedar Point Park Services Warehouse Inventory")
+    return client.open("Cedar Point Warehouse Inventory")
 
 
 root = Root()
 logging_handler(root)
-sh = google_sheets_setup()
-
 root.mainloop()
