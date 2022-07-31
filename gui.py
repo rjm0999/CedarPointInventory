@@ -215,7 +215,7 @@ class InventoryGui(Gui):
         #    self.awaiting_delivery.set(self.parent.deliveries["Quantity Ordered"]
         #                               [self.parent.inv.index.tolist()[lb.curselection()[0]]])
         # else:
-            # self.awaiting_delivery.set("0")
+        #       self.awaiting_delivery.set("0")
 
         # self.awaiting_delivery_label.configure(text="Awaiting Delivery: " + self.awaiting_delivery.get())
 
@@ -446,8 +446,8 @@ class ReqGui(Gui):
                         department_num = department_num.replace(j, "")
 
                     self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
-                                                                            str(date.toordinal(date.today())),
-                                                                            i[0].get(), i[2].get()]
+                                                                             str(date.toordinal(date.today())),
+                                                                             i[0].get(), i[2].get()]
             self.parent.inv.to_csv("database/Inventory.csv")
             self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
             self.parent.req_gui()
@@ -621,7 +621,7 @@ class DeliveryGui(Gui):
         self.configure_parent()
         self.configure_self()
 
-        #self.create_listbox()
+        # self.create_listbox()
 
         self.frame_buttons().grid(row=1, column=0, sticky=tk.NSEW)
 
@@ -679,9 +679,12 @@ class ReqHistoryGui(Gui):
 
         self.date_vars = [[tk.StringVar(), tk.StringVar(), tk.StringVar()],
                           [tk.StringVar(), tk.StringVar(), tk.StringVar()]]
-        self.date_vals = [[range(1, 32), range(1, 13), range(2022, date.today().year + 1)],
-                          [range(1, 32), range(1, 13), range(2022, date.today().year + 1)]]
+        self.date_vals = [[range(1, 13), range(1, 32), range(2022, date.today().year + 1)],
+                          [range(1, 13), range(1, 32), range(2022, date.today().year + 1)]]
         self.date_opts = [[None]*3]*2
+
+        self.early = date.today()
+        self.late = date.today()
 
         self.lb = self.create_listbox()
 
@@ -728,7 +731,8 @@ class ReqHistoryGui(Gui):
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
-                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Department"][key])].get():
+                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Department"][key])].get() \
+                   and self.early.toordinal() <= self.parent.reqs["Date"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -751,26 +755,27 @@ class ReqHistoryGui(Gui):
                     list_var.append(item)
 
             except IndexError:
-                item = str(self.parent.reqs["Item #"][key])
-                while len(item) < 10:
-                    item += " "
+                if self.early <= self.parent.reqs["Date"][key] <= self.late.toordinal():
+                    item = str(self.parent.reqs["Item #"][key])
+                    while len(item) < 10:
+                        item += " "
 
-                item += str(self.parent.inv["Name"][self.parent.reqs["Item #"][key]])
-                item = item[0:40]
-                while len(item) < 45:
-                    item += " "
+                    item += str(self.parent.inv["Name"][self.parent.reqs["Item #"][key]])
+                    item = item[0:40]
+                    while len(item) < 45:
+                        item += " "
 
-                item += str(self.parent.reqs["Item Quantity"][key])
-                while len(item) < 55:
-                    item += " "
+                    item += str(self.parent.reqs["Item Quantity"][key])
+                    while len(item) < 55:
+                        item += " "
 
-                item += str(self.parent.reqs["Department"][key])
-                while len(item) < 65:
-                    item += " "
+                    item += str(self.parent.reqs["Department"][key])
+                    while len(item) < 65:
+                        item += " "
 
-                item += str(date.fromordinal(self.parent.reqs["Date"][key]))
+                    item += str(date.fromordinal(self.parent.reqs["Date"][key]))
 
-                list_var.append(item)
+                    list_var.append(item)
 
             idx += 1
 
@@ -854,15 +859,18 @@ class ReqHistoryGui(Gui):
         elif string == "date":
             frm = tk.Frame(parent)
 
-            opt1 = tk.OptionMenu(frm, self.date_vars[0][0], "Day", *self.date_vals[0][0], command=self.set_date)
+            opt1 = tk.OptionMenu(frm, self.date_vars[0][0], "Day", *self.date_vals[0][0],
+                                 command=lambda e: self.set_date())
             opt1.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt1.config(width=5)
 
-            opt2 = tk.OptionMenu(frm, self.date_vars[0][1], "Month", *self.date_vals[0][1], command=self.set_date)
+            opt2 = tk.OptionMenu(frm, self.date_vars[0][1], "Month", *self.date_vals[0][1],
+                                 command=lambda e: self.set_date())
             opt2.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt2.config(width=5)
 
-            opt3 = tk.OptionMenu(frm, self.date_vars[0][2], "Year", *self.date_vals[0][2], command=self.set_date)
+            opt3 = tk.OptionMenu(frm, self.date_vars[0][2], "Year", *self.date_vals[0][2],
+                                 command=lambda e: self.set_date())
             opt3.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt3.config(width=5)
 
@@ -870,15 +878,18 @@ class ReqHistoryGui(Gui):
 
             to = tk.Frame(parent)
 
-            opt4 = tk.OptionMenu(to, self.date_vars[1][0], "Day", *self.date_vals[1][0], command=self.set_date)
+            opt4 = tk.OptionMenu(to, self.date_vars[1][0], "Day", *self.date_vals[1][0],
+                                 command=lambda e: self.set_date())
             opt4.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt4.config(width=5)
 
-            opt5 = tk.OptionMenu(to, self.date_vars[1][1], "Month", *self.date_vals[1][1], command=self.set_date)
+            opt5 = tk.OptionMenu(to, self.date_vars[1][1], "Month", *self.date_vals[1][1],
+                                 command=lambda e: self.set_date())
             opt5.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt5.config(width=5)
 
-            opt6 = tk.OptionMenu(to, self.date_vars[1][2], "Year", *self.date_vals[1][2], command=self.set_date)
+            opt6 = tk.OptionMenu(to, self.date_vars[1][2], "Year", *self.date_vals[1][2],
+                                 command=lambda e: self.set_date())
             opt6.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
             opt6.config(width=5)
 
@@ -922,4 +933,18 @@ class ReqHistoryGui(Gui):
         return frm
 
     def set_date(self):
-        pass
+        try:
+            early = self.date_vars[0]
+            self.early = date(int(early[2].get()), int(early[0].get()), int(early[1].get()))
+
+            print(self.early)
+        except ValueError:
+            print(self.early)
+
+        try:
+            late = self.date_vars[1]
+            self.late = date(int(late[2].get()), int(late[0].get()), int(late[1].get()))
+        except ValueError:
+            pass
+
+        self.create_listbox()
