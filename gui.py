@@ -474,7 +474,7 @@ class ReqGui(Gui):
         # TODO automatically add daily stocking items to a req, user just has to input quantities
         pass
 
-    # TODO be able to view req history, include pivot table like view to see usage by department
+    # TODO req history: use by department
 
 
 class AuditGui(Gui):
@@ -592,7 +592,6 @@ class OrderGui(Gui):
         super().__init__(parent)
 
         self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
-        # TODO order widgets
 
     def configure_parent(self):
         """
@@ -612,6 +611,27 @@ class OrderGui(Gui):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         # TODO configure order gui frame
+
+    def frame_canvas(self):
+        """
+        Create canvas to for  orders gui
+        """
+        frame = tk.Frame(self)
+
+        canvas = tk.Canvas(frame)
+        scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
+
+        frm = tk.Frame(canvas)
+
+        canvas.create_window(0, 0, anchor=tk.NW, window=frm)
+        canvas.update_idletasks()
+
+        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set, highlightthickness=0)
+
+        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=25, pady=25)
+
+        frame.grid(row=0, column=0,  sticky=tk.NSEW)
 
 
 class DeliveryGui(Gui):
@@ -677,11 +697,13 @@ class ReqHistoryGui(Gui):
         self.cb_dept = []
         self.cb_all_depts = tk.BooleanVar()
 
-        self.date_vars = [[tk.StringVar(), tk.StringVar(), tk.StringVar()],
-                          [tk.StringVar(), tk.StringVar(), tk.StringVar()]]
+        self.date_vars = [[tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
+                           tk.StringVar(value=str(date.today().year))],
+                          [tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
+                           tk.StringVar(value=str(date.today().year))]]
         self.date_vals = [[range(1, 13), range(1, 32), range(2022, date.today().year + 1)],
                           [range(1, 13), range(1, 32), range(2022, date.today().year + 1)]]
-        self.date_opts = [[None]*3]*2
+        self.date_opts = [[], []]
 
         self.early = date.today()
         self.late = date.today()
@@ -755,7 +777,7 @@ class ReqHistoryGui(Gui):
                     list_var.append(item)
 
             except IndexError:
-                if self.early <= self.parent.reqs["Date"][key] <= self.late.toordinal():
+                if self.early.toordinal() <= self.parent.reqs["Date"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -859,39 +881,39 @@ class ReqHistoryGui(Gui):
         elif string == "date":
             frm = tk.Frame(parent)
 
-            opt1 = tk.OptionMenu(frm, self.date_vars[0][0], "Day", *self.date_vals[0][0],
-                                 command=lambda e: self.set_date())
-            opt1.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt1.config(width=5)
+            self.date_opts[0].append(tk.OptionMenu(frm, self.date_vars[0][0], "Month", *self.date_vals[0][0],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[0][0].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[0][0].config(width=5)
 
-            opt2 = tk.OptionMenu(frm, self.date_vars[0][1], "Month", *self.date_vals[0][1],
-                                 command=lambda e: self.set_date())
-            opt2.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt2.config(width=5)
+            self.date_opts[0].append(tk.OptionMenu(frm, self.date_vars[0][1], "Day", *self.date_vals[0][1],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[0][1].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[0][1].config(width=5)
 
-            opt3 = tk.OptionMenu(frm, self.date_vars[0][2], "Year", *self.date_vals[0][2],
-                                 command=lambda e: self.set_date())
-            opt3.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt3.config(width=5)
+            self.date_opts[0].append(tk.OptionMenu(frm, self.date_vars[0][2], "Year", *self.date_vals[0][2],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[0][2].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[0][2].config(width=5)
 
             frm.pack(expand=True, fill=tk.BOTH, side=tk.TOP)
 
             to = tk.Frame(parent)
 
-            opt4 = tk.OptionMenu(to, self.date_vars[1][0], "Day", *self.date_vals[1][0],
-                                 command=lambda e: self.set_date())
-            opt4.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt4.config(width=5)
+            self.date_opts[1].append(tk.OptionMenu(to, self.date_vars[1][0], "Month", *self.date_vals[1][0],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[1][0].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[1][0].config(width=5)
 
-            opt5 = tk.OptionMenu(to, self.date_vars[1][1], "Month", *self.date_vals[1][1],
-                                 command=lambda e: self.set_date())
-            opt5.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt5.config(width=5)
+            self.date_opts[1].append(tk.OptionMenu(to, self.date_vars[1][1], "Day", *self.date_vals[1][1],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[1][1].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[1][1].config(width=5)
 
-            opt6 = tk.OptionMenu(to, self.date_vars[1][2], "Year", *self.date_vals[1][2],
-                                 command=lambda e: self.set_date())
-            opt6.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-            opt6.config(width=5)
+            self.date_opts[1].append(tk.OptionMenu(to, self.date_vars[1][2], "Year", *self.date_vals[1][2],
+                                     command=lambda e: self.set_date()))
+            self.date_opts[1][2].pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
+            self.date_opts[1][2].config(width=5)
 
             to.pack(expand=True, fill=tk.BOTH, side=tk.BOTTOM)
         else:
@@ -933,18 +955,94 @@ class ReqHistoryGui(Gui):
         return frm
 
     def set_date(self):
-        try:
-            early = self.date_vars[0]
-            self.early = date(int(early[2].get()), int(early[0].get()), int(early[1].get()))
 
-            print(self.early)
-        except ValueError:
-            print(self.early)
+        e_day = int(self.date_vars[0][1].get())
+        print(e_day)
+        e_month = int(self.date_vars[0][0].get())
+        print(e_month)
+        e_year = int(self.date_vars[0][2].get())
+        print(e_year)
+        l_day = int(self.date_vars[1][1].get())
+        print(l_day)
+        l_month = int(self.date_vars[1][0].get())
+        print(l_month)
+        l_year = int(self.date_vars[1][2].get())
+        print(l_year)
 
-        try:
-            late = self.date_vars[1]
-            self.late = date(int(late[2].get()), int(late[0].get()), int(late[1].get()))
-        except ValueError:
-            pass
+        self.date_vals[0][2] = range(2022, l_year + 1)
+        self.date_vals[1][2] = range(e_year, date.today().year + 1)
 
+        if e_year == l_year:
+            self.date_vals[0][0] = range(1, l_month + 1)
+            self.date_vals[1][0] = range(e_month, 13)
+            print("years equal")
+            if e_month == l_month:
+                print("months equal")
+                self.date_vals[0][1] = range(1, l_day + 1)
+                if l_month in [1, 3, 5, 7, 8, 10, 12]:
+                    self.date_vals[1][1] = range(e_day, 32)
+                elif l_month in [4, 6, 9, 11]:
+                    self.date_vals[1][1] = range(e_day, 31)
+                elif l_month == 2:
+                    if l_year % 4 == 0 and not l_year % 100 == 0:
+                        self.date_vals[1][1] = range(e_day, 30)
+                    else:
+                        self.date_vals[1][1] = range(e_day, 29)
+            else:
+                if e_month in [1, 3, 5, 7, 8, 10, 12]:
+                    self.date_vals[0][1] = range(1, 32)
+                elif e_month in [4, 6, 9, 11]:
+                    self.date_vals[0][1] = range(1, 31)
+                elif e_month == 2:
+                    if e_year % 4 == 0 and not e_year % 100 == 0:
+                        self.date_vals[0][1] = range(1, 30)
+                    else:
+                        self.date_vals[0][1] = range(1, 29)
+
+                if l_month in [1, 3, 5, 7, 8, 10, 12]:
+                    self.date_vals[1][1] = range(1, 32)
+                elif l_month in [4, 6, 9, 11]:
+                    self.date_vals[1][1] = range(1, 31)
+                elif l_month == 2:
+                    if l_year % 4 == 0 and not l_year % 100 == 0:
+                        self.date_vals[1][1] = range(1, 30)
+                    else:
+                        self.date_vals[1][1] = range(1, 29)
+        else:
+            self.date_vals[0][0] = range(1, 13)
+            self.date_vals[1][0] = range(1, 13)
+
+            if e_month in [1, 3, 5, 7, 8, 10, 12]:
+                self.date_vals[0][1] = range(1, 32)
+            elif e_month in [4, 6, 9, 11]:
+                self.date_vals[0][1] = range(1, 31)
+            elif e_month == 2:
+                if e_year % 4 == 0 and not e_year % 100 == 0:
+                    self.date_vals[0][1] = range(1, 30)
+                else:
+                    self.date_vals[0][1] = range(1, 29)
+
+            if l_month in [1, 3, 5, 7, 8, 10, 12]:
+                self.date_vals[1][1] = range(1, 32)
+            elif l_month in [4, 6, 9, 11]:
+                self.date_vals[1][1] = range(1, 31)
+            elif l_month == 2:
+                if l_year % 4 == 0 and not l_year % 100 == 0:
+                    self.date_vals[1][1] = range(1, 30)
+                else:
+                    self.date_vals[1][1] = range(1, 29)
+
+        self.early = date(e_year, e_month, e_day)
+        self.late = date(l_year, l_month, l_day)
+
+        self.update_options()
         self.create_listbox()
+
+    def update_options(self):
+        for i in [0, 1]:
+            for j in [0, 1, 2]:
+                menu = self.date_opts[i][j]["menu"]
+                menu.delete(0, "end")
+                for string in self.date_vals[i][j]:
+                    menu.add_command(label=string,
+                                     command=lambda value=string: self.date_vars[i][j].set(value))
