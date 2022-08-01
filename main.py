@@ -94,18 +94,16 @@ class Root(tk.Tk):
         self.reqs = pd.concat(indv_reqs, keys=years)
 
 
-def log_exceptions():
-    logging.exception("That's Clear")
-    root.quit()
-
-
-def logging_handler(top):
-    top.report_callback_exception = log_exceptions
+def log_exceptions(exception, value, tb):
     filename = str(datetime.now())
-    for i in [" ", ":", "."]:
-        filename = filename.replace(i, "")
+    filename = filename.replace(":", ".")
+    filename = filename[0:19]
     filename = "error logs\\" + filename + ".txt"
-    logging.basicConfig(filename=filename, encoding="utf-8", level=logging.ERROR, )
+    logging.basicConfig(filename=filename, encoding="utf-8")
+
+    logging.exception("That's Clear: error of type " + str(exception)[8:-2])
+
+    root.quit()
 
 
 def google_sheets_setup():
@@ -117,5 +115,6 @@ def google_sheets_setup():
 
 
 root = Root()
-logging_handler(root)
+root.report_callback_exception = log_exceptions
+
 root.mainloop()
