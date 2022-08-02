@@ -6,8 +6,9 @@ class Root(tk.Tk):
     def __init__(self):
         super().__init__()
 
-        types_dict = {"Name": str, "Description": str, "Quantity": int, "Unit": str}
-        self.inv = pd.read_csv("database/Inventory.csv", index_col="Number").astype(dtype=types_dict, copy=False)
+        self.sh = google_sheets_setup()
+
+        self.inv = self.read_sheet("inv")
 
         types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
         try:
@@ -17,7 +18,6 @@ class Root(tk.Tk):
             self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")\
                 .astype(dtype=types_dict, copy=False)
 
-        self.sh = google_sheets_setup()
         #  TODO make back button go to last screen instead of main menu
         #
         #   self.last_gui = None
@@ -92,6 +92,19 @@ class Root(tk.Tk):
                              .astype(dtype=types_dict, copy=False))
 
         self.reqs = pd.concat(indv_reqs, keys=years)
+
+    def read_sheet(self, sheet):
+        if sheet == "inv":
+            indices = []
+            records = self.sh.worksheet("Inventory-Stock Data").get_all_records()
+            for i in records:
+                indices.append(i["Number"])
+            return pd.DataFrame(records, index=indices)
+
+    def write_sheet(self, sheet, start_cell):
+        if sheet == "inv":
+            self.sh.worksheet("Inventory-Stock Data").update([self.inv.columns.values.tolist()]
+                                                             + self.inv.values.tolist())
 
 
 def log_exceptions(exception, value, tb):
