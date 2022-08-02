@@ -1,16 +1,15 @@
 import tkinter as tk
-import pandas as pd  # pandas has a pivot table method
+import math
+import pandas as pd
 from datetime import date, datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-# TODO google api to connect to sheets
+from constants import FONT
+from constants import DEPARTMENTS
 
 # google account info username: CedarPointInventory
 #                     password: CedarPoint2022
 #                     birthday: 1 January 1902
-
-from constants import FONT
-from constants import DEPARTMENTS
 
 
 class Gui(tk.Frame):
@@ -121,16 +120,40 @@ class InventoryGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.days_passed = 0
+        self.days_left = 0
+
         self.item_quantity = tk.StringVar(self)
         self.item_quantity_label = None
 
         self.awaiting_delivery = tk.StringVar(self)
         self.awaiting_delivery_label = None
 
+        self.year = tk.StringVar(self)
+        self.year_label = None
+
+        self.last_30 = tk.StringVar(self)
+        self.last_30_label = None
+
+        self.remaining = tk.StringVar(self)
+        self.remaining_label = None
+
         self.configure_parent()
         self.configure_self()
 
-        self.create_listbox()
+        lb_frame = tk.Frame(self)
+
+        self.search = tk.StringVar(self)
+        self.search.trace("w", lambda e, f, g: self.create_listbox(lb_frame))
+
+        lb_frame.rowconfigure(0, weight=1)
+        lb_frame.rowconfigure(1, weight=4)
+
+        lb_frame.columnconfigure(0, weight=1)
+
+        self.create_listbox(lb_frame)
+        self.create_searchbox(lb_frame)
+        lb_frame.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.frame_entry()
         self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
@@ -158,48 +181,70 @@ class InventoryGui(Gui):
 
         self.rowconfigure(0, weight=1)
 
-    def create_listbox(self):
+    def create_listbox(self, parent):
         """
         Create a tkinter.Listbox widget for the inventory gui
         """
         list_var = []
         for i in self.parent.inv.index.tolist():
-            list_var.append(self.parent.inv["Name"][i] + " : " + str(self.parent.inv["Quantity"][i])
-                            + " " + self.parent.inv["Unit"][i])
+            if self.search.get().lower() in self.parent.inv["Name"][i].lower() or self.search.get().lower() \
+                    in self.parent.inv["Description"][i].lower():
+                list_var.append(self.parent.inv["Name"][i] + " : " + str(self.parent.inv["Quantity"][i])
+                                + " " + self.parent.inv["Unit"][i])
 
-        lb = tk.Listbox(self, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
-        lb.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
+        lb = tk.Listbox(parent, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
+        lb.grid(row=1, column=0, sticky=tk.NSEW, padx=25, pady=10)
         lb.config(width=0)
 
-        lb.bind("<<ListboxSelect>>", lambda e: self.listbox_change(lb))
+        lb.bind("<<ListboxSelect>>", lambda e: self.listbox_change(lb, list_var))
 
     def frame_entry(self):
         """
         Create and configure the grid of a tkinter.Frame widget to hold tkinter.Label widgets
         """
+        wide = 30
         frame_entry = tk.Frame(self)
 
         frame_entry.grid(row=0, column=1, sticky=tk.NSEW)
 
         frame_entry.rowconfigure(0, weight=1)
-        # frame_entry.rowconfigure(1, weight=1)
-        # frame_entry.rowconfigure(2, weight=1)
+        frame_entry.rowconfigure(1, weight=1)
+        frame_entry.rowconfigure(2, weight=1)
+        frame_entry.rowconfigure(3, weight=1)
+        frame_entry.rowconfigure(4, weight=1)
+        frame_entry.rowconfigure(5, weight=1)
 
         frame_entry.columnconfigure(0, weight=1)
+        frame_entry.columnconfigure(1, weight=1)
 
-        # self.awaiting_delivery_label = tk.Label(frame_entry, text="Awaiting Delivery: ", font=(FONT, 25))
-        # self.awaiting_delivery_label.grid(row=1, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        # self.awaiting_delivery_label.config(width=1)
+        self.days_passed = date.today().toordinal() - date(date.today().year, 1, 1).toordinal()
+        days_passed_label = tk.Label(frame_entry, text="Days since 1/1: "+str(self.days_passed), font=(FONT, 25))
+        days_passed_label.grid(row=0, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
 
-        # deliveries = tk.Button(frame_entry, text="Go to Deliveries",
-        #                       command=self.parent.delivery_gui, font=(FONT, 25))
-        # deliveries.grid(row=2, column=0, sticky=tk.NSEW, padx=50, pady=50)
+        self.days_left = date(date.today().year, 12, 31).toordinal() - date.today().toordinal()
+        days_left_label = tk.Label(frame_entry, text="Days left until 12/31: "+str(self.days_left), font=(FONT, 25))
+        days_left_label.grid(row=1, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
 
         self.item_quantity_label = tk.Label(frame_entry, text="Current Inventory: ", font=(FONT, 25))
-        self.item_quantity_label.grid(row=0, column=0, sticky=tk.NSEW, padx=50, pady=50)
-        self.item_quantity_label.config(width=18)
+        self.item_quantity_label.grid(row=2, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
+        self.item_quantity_label.config(width=wide)
 
-    def listbox_change(self, lb):
+        self.year_label = tk.Label(frame_entry, text="Used this year: ", font=(FONT, 25))
+        self.year_label.grid(row=3, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
+        self.year_label.config(width=wide)
+
+        self.last_30_label = tk.Label(frame_entry, text="Used in the last 30 days: ", font=(FONT, 25))
+        self.last_30_label.grid(row=4, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
+        self.last_30_label.config(width=wide)
+
+        self.remaining_label = tk.Label(frame_entry, text="Current stock will last\ndays at current rate",
+                                        font=(FONT, 25))
+        self.remaining_label.grid(row=5, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=5)
+        self.remaining_label.config(width=wide)
+
+        # TODO make a scrollable canvas and add labels for each column from spreadsheet
+
+    def listbox_change(self, lb, list_var):
         """
         Define behavior for when listbox selection changes
 
@@ -207,26 +252,58 @@ class InventoryGui(Gui):
         ----------
         lb : tkinter.Listbox
             the listbox widget to define behavior for
+        list_var : List
         """
-        self.item_quantity.set(self.parent.inv["Quantity"][self.parent.inv.index.tolist()[lb.curselection()[0]]])
-        self.item_quantity_label.configure(text="Current Inventory: " + self.item_quantity.get())
 
-        # if self.parent.inv.index.tolist()[lb.curselection()[0]] in self.parent.deliveries.index.tolist():
-        #    self.awaiting_delivery.set(self.parent.deliveries["Quantity Ordered"]
-        #                               [self.parent.inv.index.tolist()[lb.curselection()[0]]])
-        # else:
-        #       self.awaiting_delivery.set("0")
+        if len(lb.curselection()) > 0:
+            name = list_var[lb.curselection()[0]][0:list_var[lb.curselection()[0]].index(":") - 1]
+            idx = self.parent.inv.index.tolist()[self.parent.inv["Name"].tolist().index(name)]
 
-        # self.awaiting_delivery_label.configure(text="Awaiting Delivery: " + self.awaiting_delivery.get())
+            item_quantity = self.parent.inv["Quantity"][idx]
+            item_num = self.parent.inv["Number"][idx]
 
+            self.item_quantity.set(item_quantity)
+            self.item_quantity_label.configure(text="Current Inventory: " + self.item_quantity.get())
+
+            last_30 = 0
+            year = 0
+
+            for i in self.parent.reqs.index.tolist():
+                if self.parent.reqs["Item #"][i] == item_num and date.fromordinal(self.parent.reqs["Date"][i]).year \
+                        == date.today().year:
+                    year += self.parent.reqs["Item Quantity"][i]
+                    if self.parent.reqs["Date"][i] >= date.today().toordinal() - 30:
+                        last_30 += self.parent.reqs["Item Quantity"][i]
+
+            self.last_30.set(str(last_30))
+            self.last_30_label.configure(text="Used in the last 30 days: " + self.last_30.get())
+
+            if item_quantity != 0:
+                if last_30 != 0:
+                    days_left = math.floor(item_quantity / (last_30 / 30.0))
+                    if days_left <= self.days_left:
+                        self.remaining.set(str(days_left))
+                        self.remaining_label.configure(text="Stock will last " + self.remaining.get()
+                                                            + "\ndays at current rate")
+                    else:
+                        self.remaining_label.configure(text="Stock will last until the end\nof the year at current rate")
+                else:
+                    self.remaining_label.configure(text="Stock will last until the end\nof the year at current rate")
+            else:
+                self.remaining_label.configure(text="No stock left")
+
+            self.year.set(str(year))
+            self.year_label.configure(text="Used this year: " + self.year.get())
+
+    def create_searchbox(self, parent):
+        sb = tk.Entry(parent, textvariable=self.search, font=(FONT, 25))
+        sb.grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=10)
     # TODO add an entry widget to search listbox (only show items that contain the string in the entry box?)
     #  will also need to change how indexing in the dataframe is done if this is implemented - low priority
 
     # TODO add button to edit items. Need to be able to change each column of the dataframe. Store in a new dataframe,
     #  then overwrite old one (save backup of old csv?). Add a confirmation window. Make sure there aren't multiple
     #  items with the same number
-
-    # TODO Add usage for past 30 days and estimated time until we run out
 
 
 class ReqGui(Gui):
@@ -283,6 +360,7 @@ class ReqGui(Gui):
         frame_buttons.rowconfigure(2, weight=1)
         frame_buttons.rowconfigure(3, weight=1)
         frame_buttons.rowconfigure(4, weight=1)
+        frame_buttons.rowconfigure(5, weight=1)
 
         tk.Label(frame_buttons, text=date.today().isoformat(), font=(FONT, 25))\
             .grid(row=0, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
@@ -293,6 +371,8 @@ class ReqGui(Gui):
             .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         tk.Button(frame_buttons, text="History", font=(FONT, 25), command=self.parent.req_history_gui)\
             .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
+        tk.Button(frame_buttons, text="Stocking Items", font=(FONT, 25), command=self.daily_stocking)\
+            .grid(row=5, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
 
     def dropdown(self, frm):
         """
@@ -411,16 +491,14 @@ class ReqGui(Gui):
             tk.Label(root, text="Did you mean to enter a negative item quantity?", font=(FONT, 25)).pack()
             frm = tk.Frame(root)
             frm.pack()
-            tk.Button(frm, text="Yes", command=root.destroy).pack(side=tk.LEFT, padx=25, pady=25)
-            tk.Button(frm, text="No", command=self.actually_commit).pack(side=tk.RIGHT, padx=25, pady=25)
-
+            tk.Button(frm, text="Yes", command=lambda: self.on_purpose(root)).pack(side=tk.LEFT, padx=25, pady=25)
+            tk.Button(frm, text="No", command=root.destroy).pack(side=tk.RIGHT, padx=25, pady=25)
         elif self.department.get() == "":
             root = tk.Tk()
             root.title("That's Clear")
             tk.Label(root, text="Please choose the department the items are being signed out to.", font=(FONT, 25))\
                 .pack(padx=25, pady=25)
             tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
-
         elif self.check_blanks():
             root = tk.Tk()
             root.title("That's Clear")
@@ -430,10 +508,15 @@ class ReqGui(Gui):
         else:
             self.actually_commit()
 
+    def on_purpose(self, root):
+        root.destroy()
+        self.actually_commit()
+
     def actually_commit(self):
         """
         add current input as a new req and updates both the inventory and req history
         """
+        self.parent.read_sheet("inv")
         try:
             for i in self.var_list:
                 if i[2].get() != "" and i[0].get() != "":
@@ -448,13 +531,13 @@ class ReqGui(Gui):
                     self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
                                                                              str(date.toordinal(date.today())),
                                                                              i[0].get(), i[2].get()]
-            self.parent.inv.to_csv("database/Inventory.csv")
-            self.parent.reqs.to_csv("history/reqs/reqs" + str(date.today().year) + ".csv")
+
+            self.parent.write_sheet("inv", "A1")
             self.parent.req_gui()
         except KeyError:
             root = tk.Tk()
             root.title("That's Clear")
-            tk.Label(root, text="You've entered an invalid item number. Please try again"
+            tk.Label(root, text="You've entered an invalid item number. Please try another"
                                 " item number.", font=(FONT, 25)).pack(padx=25, pady=25)
             tk.Button(root, text="Back", command=root.destroy, font=(FONT, 25)).pack(padx=25, pady=25)
 
@@ -471,8 +554,16 @@ class ReqGui(Gui):
                 l1.config(text="Unknown Item Number")
 
     def daily_stocking(self):
-        # TODO automatically add daily stocking items to a req, user just has to input quantities
-        pass
+        stocking_list = [20200, 30000, 102700, 35300, 8000, 80100, 91100, 35700, 45000, 35500, 35600, 90500, 90700,
+                         20500, 61300, 90000, 90100, 70000, 70100, 70200, 70300, 10200, 90200, 61200, 61000, 60400,
+                         60500, 60000, 61900, 81700, 36000, 60700, 60800, 70400]
+
+        for i in stocking_list:
+            idx = stocking_list.index(i)
+            self.add_row()
+            self.var_list[idx][0].set(str(i))
+            self.item_num_change(self.req_list[idx][0], self.req_list[idx][1])
+        self.department.set("4005 - Park Services")
 
     # TODO req history: use by department
 
@@ -591,6 +682,11 @@ class OrderGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.configure_parent()
+        self.configure_self()
+
+        self.lb1 = self.create_lb1()
+        self.lb2 = self.create_lb2()
         self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
 
     def configure_parent(self):
@@ -609,29 +705,25 @@ class OrderGui(Gui):
         self.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+
         self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
         # TODO configure order gui frame
 
-    def frame_canvas(self):
-        """
-        Create canvas to for  orders gui
-        """
-        frame = tk.Frame(self)
+    def create_lb1(self):
+        lb1 = tk.Listbox(self)
+        lb1.grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=10)
 
-        canvas = tk.Canvas(frame)
-        scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
+        lb1.bind("<<ListboxSelect>>", lambda e: self.create_lb2())
+        return lb1
 
-        frm = tk.Frame(canvas)
-
-        canvas.create_window(0, 0, anchor=tk.NW, window=frm)
-        canvas.update_idletasks()
-
-        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set, highlightthickness=0)
-
-        canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
-        scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=25, pady=25)
-
-        frame.grid(row=0, column=0,  sticky=tk.NSEW)
+    def create_lb2(self):
+        if self.lb2 is not None:
+            self.lb2.destroy()
+        lb2 = tk.Listbox(self)
+        lb2.grid(row=1, column=0, columnspan=2, sticky=tk.NSEW, padx=25, pady=10)
+        return lb2
 
 
 class DeliveryGui(Gui):
@@ -955,19 +1047,12 @@ class ReqHistoryGui(Gui):
         return frm
 
     def set_date(self):
-
         e_day = int(self.date_vars[0][1].get())
-        print(e_day)
         e_month = int(self.date_vars[0][0].get())
-        print(e_month)
         e_year = int(self.date_vars[0][2].get())
-        print(e_year)
         l_day = int(self.date_vars[1][1].get())
-        print(l_day)
         l_month = int(self.date_vars[1][0].get())
-        print(l_month)
         l_year = int(self.date_vars[1][2].get())
-        print(l_year)
 
         self.date_vals[0][2] = range(2022, l_year + 1)
         self.date_vals[1][2] = range(e_year, date.today().year + 1)
@@ -975,9 +1060,7 @@ class ReqHistoryGui(Gui):
         if e_year == l_year:
             self.date_vals[0][0] = range(1, l_month + 1)
             self.date_vals[1][0] = range(e_month, 13)
-            print("years equal")
             if e_month == l_month:
-                print("months equal")
                 self.date_vals[0][1] = range(1, l_day + 1)
                 if l_month in [1, 3, 5, 7, 8, 10, 12]:
                     self.date_vals[1][1] = range(e_day, 32)
@@ -1038,11 +1121,43 @@ class ReqHistoryGui(Gui):
         self.update_options()
         self.create_listbox()
 
+    def menu_command(self, tup):
+        self.date_vars[tup[0]][tup[1]].set(tup[2])
+        self.set_date()
+
     def update_options(self):
-        for i in [0, 1]:
-            for j in [0, 1, 2]:
-                menu = self.date_opts[i][j]["menu"]
-                menu.delete(0, "end")
-                for string in self.date_vals[i][j]:
-                    menu.add_command(label=string,
-                                     command=lambda value=string: self.date_vars[i][j].set(value))
+        menu = self.date_opts[0][0]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[0][0]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(0, 0, string): self.menu_command(f))
+
+        menu = self.date_opts[0][1]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[0][1]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(0, 1, string): self.menu_command(f))
+
+        menu = self.date_opts[0][2]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[0][2]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(0, 2, string): self.menu_command(f))
+
+        menu = self.date_opts[1][0]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[1][0]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(1, 0, string): self.menu_command(f))
+
+        menu = self.date_opts[1][1]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[1][1]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(1, 1, string): self.menu_command(f))
+
+        menu = self.date_opts[1][2]["menu"]
+        menu.delete(0, tk.END)
+        for integer in self.date_vals[1][2]:
+            string = str(integer)
+            menu.add_command(label=string, command=lambda e=self, f=(1, 2, string): self.menu_command(f))
