@@ -1,6 +1,8 @@
 from constants import *
 from gui import Gui
 
+# TODO Make this part display more useful info, also clean it up
+
 
 class InventoryGui(Gui):
     def __init__(self, parent):
@@ -71,12 +73,13 @@ class InventoryGui(Gui):
         """
         Create a tkinter.Listbox widget for the inventory gui
         """
+        self.parent.inv = self.parent.read_sheet("inv")
+
         list_var = []
         for i in self.parent.inv.index.tolist():
             if self.search.get().lower() in self.parent.inv["Name"][i].lower() or self.search.get().lower() \
                     in self.parent.inv["Description"][i].lower():
-                list_var.append(self.parent.inv["Name"][i] + " : " + str(self.parent.inv["Quantity"][i])
-                                + " " + self.parent.inv["Unit"][i])
+                list_var.append(str(self.parent.inv["Number"][i]) + " : " + self.parent.inv["Name"][i])
 
         lb = tk.Listbox(parent, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
         lb.grid(row=1, column=0, sticky=tk.NSEW, padx=25, pady=10)
@@ -143,7 +146,7 @@ class InventoryGui(Gui):
 
         if len(lb.curselection()) > 0:
             name = list_var[lb.curselection()[0]][0:list_var[lb.curselection()[0]].index(":") - 1]
-            idx = self.parent.inv.index.tolist()[self.parent.inv["Name"].tolist().index(name)]
+            idx = self.parent.inv.index.tolist()[self.parent.inv["Number"].tolist().index(int(name))]
 
             item_quantity = self.parent.inv["Quantity"][idx]
             item_num = self.parent.inv["Number"][idx]
@@ -155,11 +158,11 @@ class InventoryGui(Gui):
             year = 0
 
             for i in self.parent.reqs.index.tolist():
-                if self.parent.reqs["Item #"][i] == item_num and date.fromordinal(self.parent.reqs["Date"][i]).year \
-                        == date.today().year:
-                    year += self.parent.reqs["Item Quantity"][i]
+                if self.parent.reqs["Item #"][i] == item_num \
+                   and date.fromordinal(self.parent.reqs["Date"][i]).year == date.today().year:
+                    year += self.parent.reqs["Amount Taken"][i]
                     if self.parent.reqs["Date"][i] >= date.today().toordinal() - 30:
-                        last_30 += self.parent.reqs["Item Quantity"][i]
+                        last_30 += self.parent.reqs["Amount Taken"][i]
 
             self.last_30.set(str(last_30))
             self.last_30_label.configure(text="Used in the last 30 days: " + self.last_30.get())
@@ -185,9 +188,6 @@ class InventoryGui(Gui):
     def create_searchbox(self, parent):
         sb = tk.Entry(parent, textvariable=self.search, font=(FONT, 25))
         sb.grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=10)
-    # TODO add an entry widget to search listbox (only show items that contain the string in the entry box?)
-    #  will also need to change how indexing in the dataframe is done if this is implemented - low priority
-
     # TODO add button to edit items. Need to be able to change each column of the dataframe. Store in a new dataframe,
     #  then overwrite old one (save backup of old csv?). Add a confirmation window. Make sure there aren't multiple
     #  items with the same number
