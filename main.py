@@ -14,14 +14,8 @@ class Root(tk.Tk):
         self.sh = google_sheets_setup()
 
         self.inv = self.read_sheet("inv")
-
-        types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
-        try:
-            self.reqs = pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")\
-                .astype(dtype=types_dict, copy=False)
-        except FileNotFoundError:
-            self.reqs = pd.read_csv("history/reqs/list.csv", index_col="Req Number")\
-                .astype(dtype=types_dict, copy=False)
+        self.reqs = self.read_sheet("req")
+        self.orders = self.read_sheet("ord")
 
         self.title("Cedar Point Park Services Warehouse Inventory Manager")
         self.state("zoomed")
@@ -56,42 +50,15 @@ class Root(tk.Tk):
 
     def audit_gui(self):
         AuditGui(self)
-        # TODO audit gui -- needs: option to view old audits by date
 
     def order_gui(self):
         OrderGui(self)
-        # TODO order gui -- needs: everything
-        #                          approval for large orders (absolute limit and % limit?)
 
     def delivery_gui(self):
         DeliveryGui(self)
-        # TODO delivery gui -- needs: buttons to add to req (go to req screen with fields already filled)
 
     def req_history_gui(self):
         ReqHistoryGui(self)
-
-    def read_reqs(self):
-        i = 2022
-        years = []
-        while i < date.today().year:
-            years.append(i)
-            i += 1
-
-        indv_reqs = []
-        types_dict = {"Department": int, "Date": int, "Item #": int, "Item Quantity": int}
-
-        for i in years:
-            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(i) + ".csv", index_col="Req Number")
-                             .astype(dtype=types_dict, copy=False))
-
-        try:
-            indv_reqs.append(pd.read_csv("history/reqs/reqs" + str(date.today().year) + ".csv", index_col="Req Number")
-                             .astype(dtype=types_dict, copy=False))
-        except FileNotFoundError:
-            indv_reqs.append(pd.read_csv("history/reqs/list.csv", index_col="Req Number")
-                             .astype(dtype=types_dict, copy=False))
-
-        self.reqs = pd.concat(indv_reqs, keys=years)
 
     def read_sheet(self, sheet):
         if sheet == "inv":
@@ -117,14 +84,19 @@ class Root(tk.Tk):
 
     def write_sheet(self, sheet, start_cell, df):
         if sheet == "inv":
-            self.sh.worksheet("Inventory-Stock Data")\
-                .update([df.columns.values.tolist()] + df.values.tolist())
+            self.sh.worksheet("Inventory-Stock Data").update([df.columns.values.tolist()] + df.values.tolist())
         elif sheet == "req":
             self.sh.worksheet("Requisitions").update([df.columns.values.tolist()] + df.values.tolist())
         elif sheet == "ord":
             self.sh.worksheet("Order Data").update([df.columns.values.tolist()] + df.values.tolist())
         else:
             print("uh oh, you did it wrong, ya big goof")
+
+    def append_row(self, sheet, list_var):
+        if sheet == "req":
+            self.sh.worksheet("Requisitions").append_row(list_var)
+        elif sheet == "ord":
+            self.sh.worksheet("Order Data").append_row(list_var)
 
 
 def log_exceptions(exception, value, tb):
@@ -151,3 +123,7 @@ root = Root()
 root.report_callback_exception = log_exceptions
 
 root.mainloop()
+
+# TODO change to menu bar at top of window, add ability to open a new window with a searchable list of all items. Might
+#  need to look into basic multithreading to have both guis be usable. Shouldn't be too hard, since they won't be
+#  talking to each other
