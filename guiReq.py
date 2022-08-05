@@ -212,22 +212,30 @@ class ReqGui(Gui):
         """
         add current input as a new req and updates both the inventory and req history
         """
-        self.parent.read_sheet("inv")
+        self.parent.inv = self.parent.read_sheet("inv")
+        self.parent.reqs = self.parent.read_sheet("req")
         try:
             for i in self.var_list:
-                if i[2].get() != "" and i[0].get() != "":
-                    self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
+                item_number = i[0].get()
+                item_quantity = i[2].get()
+                if item_quantity != "" and item_number != "":
+                    self.parent.inv.at[int(item_number), "Quantity"] -= int(item_quantity)
                     department = self.department.get()
                     department_num = self.department.get()
                     for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
                         department = department.replace(j, "")
                     for j in department:
                         department_num = department_num.replace(j, "")
-
-                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
-                                                                             str(date.toordinal(date.today())),
-                                                                             i[0].get(), i[2].get()]
-
+                    req_info = [len(self.parent.reqs.index) + 1,  # req num
+                                item_number,  # item number
+                                self.parent.inv.at[int(item_number), "Description"],  # item description
+                                item_quantity,  # quantity
+                                self.parent.inv.at[int(item_number), "Unit"],  # Unit
+                                department_num,  # department number
+                                department.replace(" - ", ""),  # department name
+                                str(date.toordinal(date.today()))]  # date
+                    self.parent.append_row("req", req_info)
+                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = req_info
             self.parent.write_sheet("inv", "A1", self.parent.inv)
             self.parent.req_gui()
         except KeyError:
@@ -261,12 +269,14 @@ class ReqGui(Gui):
             self.item_num_change(self.req_list[idx][0], self.req_list[idx][1])
         self.department.set("4005 - Park Services")
 
-    # TODO req history: use by department
+    # TODO req history: use by department - have spreadsheet with this data already, just need to get the code using it
 
 
 class ReqHistoryGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
+
+        self.reqs = self.parent.read_sheet("req")
 
         self.cb_item_num = []
         self.cb_all_items = tk.BooleanVar()
@@ -329,7 +339,7 @@ class ReqHistoryGui(Gui):
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
-                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Department"][key])].get() \
+                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Dep Code"][key])].get() \
                    and self.early.toordinal() <= self.parent.reqs["Date"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
@@ -340,7 +350,7 @@ class ReqHistoryGui(Gui):
                     while len(item) < 45:
                         item += " "
 
-                    item += str(self.parent.reqs["Item Quantity"][key])
+                    item += str(self.parent.reqs["Amount Taken"][key])
                     while len(item) < 55:
                         item += " "
 
@@ -363,7 +373,7 @@ class ReqHistoryGui(Gui):
                     while len(item) < 45:
                         item += " "
 
-                    item += str(self.parent.reqs["Item Quantity"][key])
+                    item += str(self.parent.reqs["Amount Taken"][key])
                     while len(item) < 55:
                         item += " "
 
