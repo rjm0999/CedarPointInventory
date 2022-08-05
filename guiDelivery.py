@@ -1,6 +1,8 @@
 from constants import *
 from gui import Gui
 
+# TODO add item to inventory and add delivery to list
+
 
 class DeliveryGui(Gui):
     def __init__(self, parent):
