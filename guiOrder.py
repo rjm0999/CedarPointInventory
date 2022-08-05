@@ -1,6 +1,8 @@
 from constants import *
 from gui import Gui
 
+# TODO approval for large orders (absolute limit and % limit?)
+
 
 class OrderGui(Gui):
     def __init__(self, parent):
@@ -16,8 +18,6 @@ class OrderGui(Gui):
 
         self.lb_list = []
         self.order_num = None
-
-        self.orders = self.parent.read_sheet("ord")
 
         self.lb1 = None
         self.create_lb1()
@@ -53,7 +53,7 @@ class OrderGui(Gui):
     def create_lb1(self):
         lb_list = []
         if self.order_num is not None:
-            order = self.orders.loc[self.order_num]
+            order = self.parent.orders.loc[self.order_num]
             if type(order["Item Num"]) is str:
                 item_num = order["Item Num"].split(", ")
                 quantity = order["Quantity"].split(", ")
@@ -83,16 +83,16 @@ class OrderGui(Gui):
         self.lb2_frame = tk.Frame(self)
 
         self.lb_list = []
-        for i in self.orders.index.tolist():
+        for i in self.parent.orders.index.tolist():
             string = str(i)
             while len(string) < 10:
                 string += " "
             string += "Current Status: "
-            if self.orders["Built"][i] == "FALSE":
+            if self.parent.orders["Built"][i] == "FALSE" or not self.parent.orders["Built"][i]:
                 string += "needs assembly"
-            elif self.orders["Fulfilled"][i] == "FALSE":
+            elif self.parent.orders["Fulfilled"][i] == "FALSE" or not self.parent.orders["Fulfilled"][i]:
                 string += "awaiting pickup or delivery"
-            elif self.orders["Req"][i] == "FALSE":
+            elif self.parent.orders["Req"][i] == "FALSE" or not self.parent.orders["Req"][i]:
                 string += "fulfilled"
             else:
                 string += "complete"
@@ -123,19 +123,19 @@ class OrderGui(Gui):
             string = self.lb_list[self.lb2.curselection()[0]]
             self.order_num = int(string[0:string.index(" ")])
 
-            temp = self.orders["Built"][self.order_num]
+            temp = self.parent.orders["Built"][self.order_num]
             if temp == "TRUE":
                 self.check_vars[0].set(1)
             else:
                 self.check_vars[0].set(0)
 
-            temp = self.orders["Fulfilled"][self.order_num]
+            temp = self.parent.orders["Fulfilled"][self.order_num]
             if temp == "TRUE":
                 self.check_vars[1].set(1)
             else:
                 self.check_vars[1].set(0)
 
-            temp = self.orders["Req"][self.order_num]
+            temp = self.parent.orders["Req"][self.order_num]
             if temp == "TRUE":
                 self.check_vars[2].set(1)
             else:
@@ -289,6 +289,8 @@ class OrderGui(Gui):
 
         f.pack(expand=True, fill=tk.BOTH, side=tk.TOP, padx=25, pady=25)
 
+        self.var_list = []
+
         self.add_row(entry_parent)
 
         canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=25, pady=25)
@@ -299,7 +301,7 @@ class OrderGui(Gui):
         self.dropdown(root)
         tk.Button(root, text="Add row", command=lambda: self.add_row(entry_parent), font=(FONT, 25))\
             .grid(row=1, column=1, sticky=tk.NSEW, padx=25, pady=25)
-        tk.Button(root, text="Done", command=self.dropdown_test, font=(FONT, 25))\
+        tk.Button(root, text="Done", command=lambda: self.commit(root), font=(FONT, 25))\
             .grid(row=2, column=1, sticky=tk.NSEW, padx=25, pady=25)
         tk.Button(root, text="Cancel", command=root.destroy, font=(FONT, 25))\
             .grid(row=3, column=1, sticky=tk.NSEW, padx=25, pady=25)
@@ -368,28 +370,43 @@ class OrderGui(Gui):
             except KeyError:
                 l1.config(text="Unknown Item Number")
 
-    def commit(self):
+    def commit(self, root):
         """
         add current input as a new order
         """
         # TODO rewrite to add to order data sheet
+        self.parent.inv = self.parent.read_sheet("inv")
+        self.parent.reqs = self.parent.read_sheet("req")
         try:
+            department = self.department.get()
+            department_num = self.department.get()
+            for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
+                department = department.replace(j, "")
+            for j in department:
+                department_num = department_num.replace(j, "")
+
+            item_nums = ""
+            item_quantities = ""
             for i in self.var_list:
-                if i[2].get() != "" and i[0].get() != "":
-                    self.parent.inv.at[int(i[0].get()), "Quantity"] -= int(i[2].get())
-                    department = self.department.get()
-                    department_num = self.department.get()
-                    for j in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]:
-                        department = department.replace(j, "")
-                    for j in department:
-                        department_num = department_num.replace(j, "")
+                item_number = i[0].get()
+                item_quantity = i[2].get()
+                if item_quantity != "" and item_number != "":
+                    item_nums += item_number + ", "
+                    item_quantities += item_quantity + ", "
 
-                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = [department_num,
-                                                                             str(date.toordinal(date.today())),
-                                                                             i[0].get(), i[2].get()]
+            order_num = self.parent.orders.index.tolist()[len(self.parent.orders.index) - 1] + 1
+            order_info = [order_num,  # order num
+                          department_num,  # department number
+                          False,  # Built
+                          False,  # Fulfilled
+                          False,  # Req
+                          item_nums[0:-2],  # Item Numbers
+                          item_quantities[0:-2]]  # Item Quantities
 
-            self.parent.write_sheet("inv", "A1")
-            self.parent.req_gui()
+            self.parent.append_row("ord", order_info)
+            self.parent.orders.loc[order_num] = order_info
+            self.create_lb2()
+            root.destroy()
         except KeyError:
             root = tk.Tk()
             root.title("That's Clear")
