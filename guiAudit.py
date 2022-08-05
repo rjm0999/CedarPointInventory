@@ -1,6 +1,9 @@
 from constants import *
 from gui import Gui
 
+# TODO redo audit so it works like doing a req, but you put in the totals for each item
+# TODO audit gui -- needs: option to view old audits by date
+
 
 class AuditGui(Gui):
     def __init__(self, parent):
