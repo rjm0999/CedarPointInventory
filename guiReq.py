@@ -236,7 +236,7 @@ class ReqGui(Gui):
                                 str(date.toordinal(date.today()))]  # date
                     self.parent.append_row("req", req_info)
                     self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = req_info
-            self.parent.write_sheet("inv", "A1", self.parent.inv)
+            self.parent.write_sheet("inv", self.parent.inv)
             self.parent.req_gui()
         except KeyError:
             root = tk.Tk()
@@ -354,7 +354,7 @@ class ReqHistoryGui(Gui):
                     while len(item) < 55:
                         item += " "
 
-                    item += str(self.parent.reqs["Department"][key])
+                    item += str(self.parent.reqs["Dep Code"][key])
                     while len(item) < 65:
                         item += " "
 
@@ -377,7 +377,7 @@ class ReqHistoryGui(Gui):
                     while len(item) < 55:
                         item += " "
 
-                    item += str(self.parent.reqs["Department"][key])
+                    item += str(self.parent.reqs["Dep Code"][key])
                     while len(item) < 65:
                         item += " "
 

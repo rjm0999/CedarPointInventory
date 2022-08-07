@@ -192,7 +192,7 @@ class OrderGui(Gui):
                 flag = True
 
             orders.loc[self.order_num, "Built"] = str(bool(self.check_vars[0].get())).upper()
-            self.parent.write_sheet("ord", "A1", orders) if flag else None
+            self.parent.write_sheet("ord", orders) if flag else None
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 
@@ -211,7 +211,7 @@ class OrderGui(Gui):
                 self.update_built(orders)
 
             orders.loc[self.order_num, "Fulfilled"] = str(bool(self.check_vars[1].get())).upper()
-            self.parent.write_sheet("ord", "A1", orders) if flag else None
+            self.parent.write_sheet("ord", orders) if flag else None
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 
@@ -230,7 +230,7 @@ class OrderGui(Gui):
                 self.update_fulfilled(orders)
 
             orders.loc[self.order_num, "Req"] = str(bool(self.check_vars[2].get())).upper()
-            self.parent.write_sheet("ord", "A1", orders) if flag else None
+            self.parent.write_sheet("ord", orders) if flag else None
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 

@@ -79,7 +79,7 @@ class InventoryGui(Gui):
         for i in self.parent.inv.index.tolist():
             if self.search.get().lower() in self.parent.inv["Name"][i].lower() or self.search.get().lower() \
                     in self.parent.inv["Description"][i].lower():
-                list_var.append(str(self.parent.inv["Number"][i]) + " : " + self.parent.inv["Name"][i])
+                list_var.append(str(i) + " : " + self.parent.inv["Name"][i])
 
         lb = tk.Listbox(parent, listvariable=tk.StringVar(value=list_var), font=(FONT, 25))
         lb.grid(row=1, column=0, sticky=tk.NSEW, padx=25, pady=10)
@@ -145,11 +145,10 @@ class InventoryGui(Gui):
         """
 
         if len(lb.curselection()) > 0:
-            name = list_var[lb.curselection()[0]][0:list_var[lb.curselection()[0]].index(":") - 1]
-            idx = self.parent.inv.index.tolist()[self.parent.inv["Number"].tolist().index(int(name))]
+            idx = int(list_var[lb.curselection()[0]][0:list_var[lb.curselection()[0]].index(":") - 1])
 
             item_quantity = self.parent.inv["Quantity"][idx]
-            item_num = self.parent.inv["Number"][idx]
+            item_num = idx
 
             self.item_quantity.set(item_quantity)
             self.item_quantity_label.configure(text="Current Inventory: " + self.item_quantity.get())

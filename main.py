@@ -16,6 +16,7 @@ class Root(tk.Tk):
         self.inv = self.read_sheet("inv")
         self.reqs = self.read_sheet("req")
         self.orders = self.read_sheet("ord")
+        self.delivery = self.read_sheet("del")
 
         self.title("Cedar Point Park Services Warehouse Inventory Manager")
         self.state("zoomed")
@@ -60,35 +61,70 @@ class Root(tk.Tk):
     def req_history_gui(self):
         ReqHistoryGui(self)
 
+    def del_history_gui(self):
+        DeliveryHistoryGui(self)
+
     def read_sheet(self, sheet):
         if sheet == "inv":
             indices = []
             records = self.sh.worksheet("Inventory-Stock Data").get_all_records()
             for i in records:
                 indices.append(i["Number"])
+                del i["Number"]
             return pd.DataFrame(records, index=indices)
         elif sheet == "req":
             indices = []
             records = self.sh.worksheet("Requisitions").get_all_records()
             for i in records:
                 indices.append(i["Req #"])
+                del i["Req #"]
             return pd.DataFrame(records, index=indices)
         elif sheet == "ord":
             indices = []
             records = self.sh.worksheet("Order Data").get_all_records()
             for i in records:
                 indices.append(i["Order Num"])
+                del i["Order Num"]
+            return pd.DataFrame(records, index=indices)
+        elif sheet == "del":
+            indices = []
+            records = self.sh.worksheet("Deliveries").get_all_records()
+            for i in records:
+                indices.append(i["Delivery #"])
+                del i["Delivery #"]
             return pd.DataFrame(records, index=indices)
         else:
             print("uh oh, you did it wrong, ya big goof")
 
-    def write_sheet(self, sheet, start_cell, df):
+    def write_sheet(self, sheet, df):
         if sheet == "inv":
-            self.sh.worksheet("Inventory-Stock Data").update([df.columns.values.tolist()] + df.values.tolist())
+            new_cols = df.columns.values.tolist().insert(0, "Number")
+            new_vals = df.values.tolist()
+            i = 0
+            while i < len(new_vals):
+                new_vals.insert(0, df.iloc[0][i])
+            self.sh.worksheet("Inventory-Stock Data").update(new_cols + new_vals)
         elif sheet == "req":
-            self.sh.worksheet("Requisitions").update([df.columns.values.tolist()] + df.values.tolist())
+            new_cols = df.columns.values.tolist().insert(0, "Req #")
+            new_vals = df.values.tolist()
+            i = 0
+            while i < len(new_vals):
+                new_vals.insert(0, df.iloc[0][i])
+            self.sh.worksheet("Requisitions").update(new_cols + new_vals)
         elif sheet == "ord":
-            self.sh.worksheet("Order Data").update([df.columns.values.tolist()] + df.values.tolist())
+            new_cols = df.columns.values.tolist().insert(0, "Order Num")
+            new_vals = df.values.tolist()
+            i = 0
+            while i < len(new_vals):
+                new_vals.insert(0, df.iloc[0][i])
+            self.sh.worksheet("Order Data").update(new_cols + new_vals)
+        elif sheet == "del":
+            new_cols = df.columns.values.tolist().insert(0, "Delivery #")
+            new_vals = df.values.tolist()
+            i = 0
+            while i < len(new_vals):
+                new_vals.insert(0, df.iloc[0][i])
+            self.sh.worksheet("Deliveries").update(new_cols + new_vals)
         else:
             print("uh oh, you did it wrong, ya big goof")
 
@@ -97,6 +133,19 @@ class Root(tk.Tk):
             self.sh.worksheet("Requisitions").append_row(list_var)
         elif sheet == "ord":
             self.sh.worksheet("Order Data").append_row(list_var)
+        elif sheet == "del":
+            self.sh.worksheet("Deliveries").append_row(list_var)
+
+    def update_reqs(self):
+        df = self.read_sheet("req")
+        for i in df.index.tolist():
+            if i < 0:
+                pass
+            else:
+                pass
+        # TODO run on startup, searches for reqs without a req # (i.e. reqs added manually to the sheet) and adds them
+        # to the inventory
+        pass
 
 
 def log_exceptions(exception, value, tb):
