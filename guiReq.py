@@ -340,7 +340,7 @@ class ReqHistoryGui(Gui):
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
                    and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Dep Code"][key])].get() \
-                   and self.early.toordinal() <= self.parent.reqs["Date"][key] <= self.late.toordinal():
+                   and self.early.toordinal() <= self.parent.reqs["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -358,12 +358,12 @@ class ReqHistoryGui(Gui):
                     while len(item) < 65:
                         item += " "
 
-                    item += str(date.fromordinal(self.parent.reqs["Date"][key]))
+                    item += str(date.fromordinal(self.parent.reqs["Ordinal"][key]))
 
                     list_var.append(item)
 
             except IndexError:
-                if self.early.toordinal() <= self.parent.reqs["Date"][key] <= self.late.toordinal():
+                if self.early.toordinal() <= self.parent.reqs["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -381,7 +381,7 @@ class ReqHistoryGui(Gui):
                     while len(item) < 65:
                         item += " "
 
-                    item += str(date.fromordinal(self.parent.reqs["Date"][key]))
+                    item += str(date.fromordinal(self.parent.reqs["Ordinal"][key]))
 
                     list_var.append(item)
 

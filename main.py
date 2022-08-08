@@ -1,4 +1,7 @@
 import logging
+
+import pandas as pd
+
 from guiAudit import *
 from guiInventory import *
 from guiMain import *
@@ -66,35 +69,39 @@ class Root(tk.Tk):
 
     def read_sheet(self, sheet):
         if sheet == "inv":
-            indices = []
-            records = self.sh.worksheet("Inventory-Stock Data").get_all_records()
-            for i in records:
-                indices.append(i["Number"])
-                del i["Number"]
-            return pd.DataFrame(records, index=indices)
+            records = self.sh.worksheet("Inventory-Stock Data")
+            idx = records.col_values(1)[1:-1]
+            cols = range(2, 12)
+            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
+            return pd.DataFrame(data=dat, index=idx)
         elif sheet == "req":
-            indices = []
-            records = self.sh.worksheet("Requisitions").get_all_records()
-            for i in records:
-                indices.append(i["Req #"])
-                del i["Req #"]
-            return pd.DataFrame(records, index=indices)
+            records = self.sh.worksheet("Requisitions")
+            idx = records.col_values(1)[1:-1]
+            cols = range(2, 9)
+            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
+            return pd.DataFrame(data=dat, index=idx)
         elif sheet == "ord":
-            indices = []
-            records = self.sh.worksheet("Order Data").get_all_records()
-            for i in records:
-                indices.append(i["Order Num"])
-                del i["Order Num"]
-            return pd.DataFrame(records, index=indices)
+            records = self.sh.worksheet("Order Data")
+            idx = records.col_values(1)[1:-1]
+            cols = range(2, 8)
+            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
+            return pd.DataFrame(data=dat, index=idx)
         elif sheet == "del":
-            indices = []
-            records = self.sh.worksheet("Deliveries").get_all_records()
-            for i in records:
-                indices.append(i["Delivery #"])
-                del i["Delivery #"]
-            return pd.DataFrame(records, index=indices)
+            records = self.sh.worksheet("Deliveries")
+            idx = records.col_values(1)[1:-1]
+            cols = range(2, 7)
+            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
+            return pd.DataFrame(data=dat, index=idx)
         else:
             print("uh oh, you did it wrong, ya big goof")
+
+    @staticmethod
+    def get_columns(ws, col_nums):
+        list_var = {}
+        for i in col_nums:
+            temp = ws.col_values(i)
+            list_var[temp[0]] = temp[1:-1]
+        return list_var
 
     def write_sheet(self, sheet, df):
         if sheet == "inv":

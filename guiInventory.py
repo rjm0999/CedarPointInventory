@@ -157,10 +157,11 @@ class InventoryGui(Gui):
             year = 0
 
             for i in self.parent.reqs.index.tolist():
+                print(str(self.parent.reqs["Item #"][i]) + "\n")
                 if self.parent.reqs["Item #"][i] == item_num \
-                   and date.fromordinal(self.parent.reqs["Date"][i]).year == date.today().year:
+                   and date.fromordinal(self.parent.reqs["Ordinal"][i]).year == date.today().year:
                     year += self.parent.reqs["Amount Taken"][i]
-                    if self.parent.reqs["Date"][i] >= date.today().toordinal() - 30:
+                    if self.parent.reqs["Ordinal"][i] >= date.today().toordinal() - 30:
                         last_30 += self.parent.reqs["Amount Taken"][i]
 
             self.last_30.set(str(last_30))

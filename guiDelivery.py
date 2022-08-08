@@ -317,7 +317,7 @@ class DeliveryHistoryGui(Gui):
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.delivery["Item #"][key])]\
-                   .get() and self.early.toordinal() <= self.parent.delivery["Date"][key] <= self.late.toordinal():
+                   .get() and self.early.toordinal() <= self.parent.delivery["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.delivery["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -336,12 +336,12 @@ class DeliveryHistoryGui(Gui):
                     while len(item) < 70:
                         item += " "
 
-                    item += str(date.fromordinal(self.parent.delivery["Date"][key]))
+                    item += str(date.fromordinal(self.parent.delivery["Ordinal"][key]))
 
                     list_var.append(item)
 
             except IndexError:
-                if self.early.toordinal() <= self.parent.delivery["Date"][key] <= self.late.toordinal():
+                if self.early.toordinal() <= self.parent.delivery["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.delivery["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -359,7 +359,7 @@ class DeliveryHistoryGui(Gui):
                     while len(item) < 65:
                         item += " "
 
-                    item += str(date.fromordinal(self.parent.delivery["Date"][key]))
+                    item += str(date.fromordinal(self.parent.delivery["Ordinal"][key]))
 
                     list_var.append(item)
 
