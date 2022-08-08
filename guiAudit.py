@@ -50,7 +50,7 @@ class AuditGui(Gui):
         canvas.create_window(0, 0, anchor=tk.NW, window=self.frame_audit(canvas))
         canvas.update_idletasks()
 
-        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set)
+        canvas.configure(scrollregion=canvas.bbox("all"), yscrollcommand=scroll.set, highlightthickness=0)
 
         canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT)
         scroll.pack(fill=tk.Y, side=tk.RIGHT)
@@ -74,6 +74,9 @@ class AuditGui(Gui):
             temp.pack()
             idx += 1
 
+        commit = tk.Button(frm, text="Commit", command=self.commit, font=(FONT, 25))
+        commit.pack(expand=True, fill=tk.BOTH, padx=(50, 0))
+
         return frm
 
     def frame_entry(self, top, idx):
@@ -93,18 +96,23 @@ class AuditGui(Gui):
         wid3 - an entry widget
         text_var - a tkinter.StringVar() object tied to a label widget, wid4
         """
-        text_var = tk.StringVar()
+        text_var1 = tk.StringVar()
+        text_var2 = tk.StringVar()
+        text_var3 = tk.StringVar()
+
+        text_var1.trace_add("write", lambda e, f, g: self.update_labels(text_var1, text_var2, text_var3))
+
         wid1 = tk.Label(top, text=self.parent.inv["Name"].iloc[idx], font=(FONT, 25), width=50)
-        wid2 = tk.Entry(top, font=(FONT, 25))
-        wid3 = tk.Entry(top, font=(FONT, 25))
-        wid4 = tk.Label(top, textvariable=text_var, font=(FONT, 25))
+        wid2 = tk.Entry(top, textvariable=text_var1, font=(FONT, 25), width=15)
+        wid3 = tk.Label(top, textvariable=text_var2, font=(FONT, 25), width=5)
+        wid4 = tk.Label(top, textvariable=text_var3, font=(FONT, 25), width=25)
 
         wid1.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=10, pady=5)
         wid2.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=10, pady=5)
         wid3.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=10, pady=5)
         wid4.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=10, pady=5)
 
-        return [wid1, wid2, wid3, text_var]
+        return [text_var1, text_var2, text_var3]
 
     @staticmethod
     def scrollbar(parent, linked_widget):
@@ -113,3 +121,44 @@ class AuditGui(Gui):
         """
         scroll = tk.Scrollbar(parent, orient=tk.VERTICAL, command=linked_widget.yview)
         return scroll
+
+    def update_labels(self, tv1, tv2, tv3):
+        idx = self.items.index([tv1, tv2, tv3])
+        current = self.parent.inv["Quantity"].iloc[idx]
+
+        try:
+            variance = current - int(tv1.get())
+            tv2.set(str(variance))
+            if current != 0:
+                if abs(variance/current) > 0.1:
+                    tv3.set("Recount")
+            else:
+                tv3.set("")
+        except ValueError:
+            tv1.set("")
+            tv2.set("")
+            tv3.set("Must be a number")
+
+    def commit(self):
+        quantities = self.parent.inv["Quantity"].tolist()
+        diff = [0]*168
+
+        for i in self.items:
+            try:
+                idx = self.items.index(i)
+                current = self.parent.inv["Quantity"].iloc[idx]
+                quantities[idx] = int(i[0].get())
+                diff[idx] = current - int(i[0].get())
+            except ValueError:
+                root = tk.Tk()
+                root.title("That's Clear")
+                tk.Label(root, text="You've left an item count blank. Items with no count will be "
+                                    "assumed to be correct. Click confirm to push the audit.", font=(FONT, 25)).pack()
+                frm = tk.Frame(root)
+                frm.pack()
+                tk.Button(frm, text="Back", command=self.destroy).pack(side=tk.LEFT, padx=25, pady=25)
+                tk.Button(frm, text="Confirm", command=lambda: self.confirm(root)).pack(side=tk.LEFT, padx=25, pady=25)
+
+    def confirm(self, root):
+        # self.parent.inv
+        root.destroy()

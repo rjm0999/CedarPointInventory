@@ -7,8 +7,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 
 FONT = "Consolas"
-DEPARTMENTS = pd.read_csv("database/Departments.csv", index_col="Dept #")
-
 
 """
 from ctypes import windll, byref, create_unicode_buffer, create_string_buffer
@@ -30,7 +28,5 @@ def loadfont(fontpath, private=True, enumerable=False):
     numFontsAdded = AddFontResourceEx(byref(pathbuf), flags, 0)
     return bool(numFontsAdded)
 
-
-FONT = "Consolas"
 FONT = "ComicMono" if loadfont("database/ComicMono.ttf") else "Consolas"
 """

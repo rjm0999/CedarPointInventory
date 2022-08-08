@@ -8,7 +8,7 @@ class ReqGui(Gui):
 
         self.req_list = []
         self.var_list = []
-        self.department = tk.StringVar()
+        self.department = tk.StringVar(value="Select Department")
         self.entry_parent = None
 
         self.configure_parent()
@@ -79,8 +79,8 @@ class ReqGui(Gui):
         frm : the parent frame to contain the dropdown
         """
         dept_list = []
-        for i in DEPARTMENTS.index.tolist():
-            dept_list.append(str(i) + " - " + DEPARTMENTS["Dept"][i])
+        for i in self.parent.departments.index.tolist():
+            dept_list.append(str(i) + " - " + self.parent.departments["Dept"][i])
 
         dd = tk.OptionMenu(frm, self.department, *dept_list)
         dd.config(font=(FONT, 25), width=18)
@@ -189,7 +189,7 @@ class ReqGui(Gui):
             frm.pack()
             tk.Button(frm, text="Yes", command=lambda: self.on_purpose(root)).pack(side=tk.LEFT, padx=25, pady=25)
             tk.Button(frm, text="No", command=root.destroy).pack(side=tk.RIGHT, padx=25, pady=25)
-        elif self.department.get() == "":
+        elif self.department.get() == "" or self.department.get() == "Select Department":
             root = tk.Tk()
             root.title("That's Clear")
             tk.Label(root, text="Please choose the department the items are being signed out to.", font=(FONT, 25))\
@@ -283,7 +283,9 @@ class ReqHistoryGui(Gui):
         self.cb_dept = []
         self.cb_all_depts = tk.BooleanVar()
 
-        self.date_vars = [[tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
+        first_day = date.fromordinal(date.today().toordinal() - 7)
+
+        self.date_vars = [[tk.StringVar(value=str(first_day.month)), tk.StringVar(value=str(first_day.day)),
                            tk.StringVar(value=str(date.today().year))],
                           [tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
                            tk.StringVar(value=str(date.today().year))]]
@@ -339,7 +341,7 @@ class ReqHistoryGui(Gui):
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
-                   and not self.cb_dept[DEPARTMENTS.index.tolist().index(self.parent.reqs["Dep Code"][key])].get() \
+                   and not self.cb_dept[self.parent.departments.index.tolist().index(self.parent.reqs["Dep Code"][key])].get() \
                    and self.early.toordinal() <= self.parent.reqs["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
@@ -423,7 +425,7 @@ class ReqHistoryGui(Gui):
 
         canvas.create_window(0, 0, anchor=tk.NW, window=frm2)
         canvas.update_idletasks()
-        canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set)
+        canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set, highlightthickness=0)
 
         canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=(pady[0], pady[1]))
         scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=50, pady=(pady[0], pady[1]))
@@ -455,12 +457,12 @@ class ReqHistoryGui(Gui):
             self.cb_all_depts.trace_add("write", lambda e, f, g: self.trace_all(self.cb_all_depts, self.cb_dept))
 
             idx = 0
-            depts_list = DEPARTMENTS.index.tolist()
-            while idx < len(DEPARTMENTS.index.tolist()):
+            depts_list = self.parent.departments.index.tolist()
+            while idx < len(self.parent.departments.index.tolist()):
                 boo = tk.BooleanVar()
                 self.cb_dept.append(boo)
                 boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_dept))
-                text = str(depts_list[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
+                text = str(depts_list[idx]) + " - " + self.parent.departments.iat[idx, 0]
                 tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
@@ -505,13 +507,7 @@ class ReqHistoryGui(Gui):
         else:
             print("you forgot to program me, dum dum (" + string + ")")
 
-    def bool_change(self, boo, var_list):
-        # temp_list = []
-        # for i in var_list:
-        #     temp_list.append(str(i))
-        # idx = temp_list.index(boo)
-        # I don't remember what I was doing here. It seems to work fine without it
-
+    def bool_change(self):
         self.lb = self.create_listbox()
 
     def trace_all(self, boo, var_list):

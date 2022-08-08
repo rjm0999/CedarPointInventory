@@ -20,6 +20,7 @@ class Root(tk.Tk):
         self.reqs = self.read_sheet("req")
         self.orders = self.read_sheet("ord")
         self.delivery = self.read_sheet("del")
+        self.departments = self.read_sheet("dep")
 
         self.title("Cedar Point Park Services Warehouse Inventory Manager")
         self.state("zoomed")
@@ -69,39 +70,36 @@ class Root(tk.Tk):
 
     def read_sheet(self, sheet):
         if sheet == "inv":
-            records = self.sh.worksheet("Inventory-Stock Data")
-            idx = records.col_values(1)[1:-1]
-            cols = range(2, 12)
-            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
-            return pd.DataFrame(data=dat, index=idx)
+            records = self.sh.worksheet("Inventory-Stock").get_all_records()
+            types = {"Item #": int, "Quantity": int, "Ordered": int, "Received": int, "Starting Inventory": int}
+            return pd.DataFrame(records).astype(types).set_index("Item #")
         elif sheet == "req":
-            records = self.sh.worksheet("Requisitions")
-            idx = records.col_values(1)[1:-1]
-            cols = range(2, 9)
-            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
-            return pd.DataFrame(data=dat, index=idx)
+            records = self.sh.worksheet("Requisitions").get_all_records()
+            for i in records:
+                del i["Date"]
+            types = {"Req #": int, "Item #": int, "Amount Taken": int, "Dep Code": int, "Ordinal": int}
+            return pd.DataFrame(records).astype(types).set_index("Req #")
         elif sheet == "ord":
-            records = self.sh.worksheet("Order Data")
-            idx = records.col_values(1)[1:-1]
-            cols = range(2, 8)
-            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
-            return pd.DataFrame(data=dat, index=idx)
+            records = self.sh.worksheet("Order Data").get_all_records()
+            types = {"Order #": int, "Built": bool, "Fulfilled": bool, "Req": bool}
+            return pd.DataFrame(records).astype(types).set_index("Order #")
         elif sheet == "del":
-            records = self.sh.worksheet("Deliveries")
-            idx = records.col_values(1)[1:-1]
-            cols = range(2, 7)
-            dat = dict([(k, pd.Series(v)) for k, v in self.get_columns(records, cols).items()])
-            return pd.DataFrame(data=dat, index=idx)
+            records = self.sh.worksheet("Deliveries").get_all_records()
+            types = {"Delivery #": int, "Quantity": int, "Ordinal": int}
+            for i in records:
+                del i["Date"]
+            return pd.DataFrame(records).astype(types).set_index("Delivery #")
+        elif sheet == "dep":
+            records = self.sh.worksheet("Departments").get_all_records()
+            types = {"Dept #": int}
+            return pd.DataFrame(records).astype(types).set_index("Dept #")
+        elif sheet == "aud":
+            records = self.sh.worksheet("Audit History").get_all_records()
+            for i in records:
+                del i["Date"]
+            return pd.DataFrame(records).astype(int).set_index("Ordinal")
         else:
             print("uh oh, you did it wrong, ya big goof")
-
-    @staticmethod
-    def get_columns(ws, col_nums):
-        list_var = {}
-        for i in col_nums:
-            temp = ws.col_values(i)
-            list_var[temp[0]] = temp[1:-1]
-        return list_var
 
     def write_sheet(self, sheet, df):
         if sheet == "inv":
@@ -142,6 +140,8 @@ class Root(tk.Tk):
             self.sh.worksheet("Order Data").append_row(list_var)
         elif sheet == "del":
             self.sh.worksheet("Deliveries").append_row(list_var)
+        elif sheet == "aud":
+            self.sh.worksheet("Audit History").append_row(list_var, "B1")
 
     def update_reqs(self):
         df = self.read_sheet("req")
@@ -155,7 +155,7 @@ class Root(tk.Tk):
         pass
 
 
-def log_exceptions(exception, value, tb):
+def log_exceptions(exception, value, throwback):
     filename = str(datetime.now())
     filename = filename.replace(":", ".")
     filename = filename[0:19]

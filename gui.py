@@ -4,8 +4,7 @@ import pandas as pd
 from datetime import date, datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from constants import FONT
-from constants import DEPARTMENTS
+from constants import *
 
 # google account info username: CedarPointInventory
 #                     password: CedarPoint2022

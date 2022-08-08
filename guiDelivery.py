@@ -79,8 +79,8 @@ class DeliveryGui(Gui):
         frm : the parent frame to contain the dropdown
         """
         dept_list = []
-        for i in DEPARTMENTS.index.tolist():
-            dept_list.append(str(i) + " - " + DEPARTMENTS["Dept"][i])
+        for i in self.parent.departments.index.tolist():
+            dept_list.append(str(i) + " - " + self.parent.departments["Dept"][i])
 
         dd = tk.OptionMenu(frm, self.department, *dept_list)
         dd.config(font=(FONT, 25), width=18)
@@ -261,9 +261,9 @@ class DeliveryHistoryGui(Gui):
         self.cb_dept = []
         self.cb_all_depts = tk.BooleanVar()
 
-        self.date_vars = [[tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
+        self.date_vars = [[tk.StringVar(value="1"), tk.StringVar(value="1"),
                            tk.StringVar(value=str(date.today().year))],
-                          [tk.StringVar(value=str(date.today().month)), tk.StringVar(value=str(date.today().day)),
+                          [tk.StringVar(value="12"), tk.StringVar(value="31"),
                            tk.StringVar(value=str(date.today().year))]]
         self.date_vals = [[range(1, 13), range(1, 32), range(2022, date.today().year + 1)],
                           [range(1, 13), range(1, 32), range(2022, date.today().year + 1)]]
@@ -402,7 +402,7 @@ class DeliveryHistoryGui(Gui):
 
         canvas.create_window(0, 0, anchor=tk.NW, window=frm2)
         canvas.update_idletasks()
-        canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set)
+        canvas.configure(scrollregion=canvas.bbox(tk.ALL), yscrollcommand=scroll.set, highlightthickness=0)
 
         canvas.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=50, pady=(pady[0], pady[1]))
         scroll.pack(fill=tk.Y, side=tk.RIGHT, padx=50, pady=(pady[0], pady[1]))
@@ -422,7 +422,7 @@ class DeliveryHistoryGui(Gui):
                 item_num = item_num_list[idx]
                 boo = tk.BooleanVar()
                 self.cb_item_num.append(boo)
-                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_item_num))
+                boo.trace_id = boo.trace_add("write", self.bool_change)
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
                 tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
@@ -435,12 +435,12 @@ class DeliveryHistoryGui(Gui):
             self.cb_all_depts.trace_add("write", lambda e, f, g: self.trace_all(self.cb_all_depts, self.cb_dept))
 
             idx = 0
-            depts_list = DEPARTMENTS.index.tolist()
-            while idx < len(DEPARTMENTS.index.tolist()):
+            depts_list = self.parent.departments.index.tolist()
+            while idx < len(depts_list):
                 boo = tk.BooleanVar()
                 self.cb_dept.append(boo)
-                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_dept))
-                text = str(depts_list[idx]) + " - " + DEPARTMENTS.iat[idx, 0]
+                boo.trace_id = boo.trace_add("write", self.bool_change)
+                text = str(depts_list[idx]) + " - " + self.parent.departments.iat[idx, 0]
                 tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
@@ -485,13 +485,7 @@ class DeliveryHistoryGui(Gui):
         else:
             print("you forgot to program me, dum dum (" + string + ")")
 
-    def bool_change(self, boo, var_list):
-        # temp_list = []
-        # for i in var_list:
-        #     temp_list.append(str(i))
-        # idx = temp_list.index(boo)
-        # I don't remember what I was doing here. It seems to work fine without it
-
+    def bool_change(self):
         self.lb = self.create_listbox()
 
     def trace_all(self, boo, var_list):
@@ -499,7 +493,7 @@ class DeliveryHistoryGui(Gui):
         for i in var_list:
             i.trace_vdelete("w", i.trace_id)
             i.set(temp)
-            i.trace_id = i.trace_add("write", lambda e, f, g: self.bool_change(e, var_list))
+            i.trace_id = i.trace_add("write", self.bool_change)
         self.lb = self.create_listbox()
 
     def frame_buttons(self):

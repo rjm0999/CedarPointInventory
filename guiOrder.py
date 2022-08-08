@@ -316,8 +316,8 @@ class OrderGui(Gui):
         """
         # FIXME text doesn't appear in option menu, still changes the string in the string var
         dept_list = []
-        for i in DEPARTMENTS.index.tolist():
-            dept_list.append(str(i) + " - " + DEPARTMENTS["Dept"][i])
+        for i in self.parent.departments.index.tolist():
+            dept_list.append(str(i) + " - " + self.parent.departments["Dept"][i])
 
         dd = tk.OptionMenu(frm, self.department, *dept_list)
         dd.config(font=(FONT, 25), width=18)

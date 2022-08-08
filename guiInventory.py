@@ -29,19 +29,19 @@ class InventoryGui(Gui):
         self.configure_parent()
         self.configure_self()
 
-        lb_frame = tk.Frame(self)
+        self.lb_frame = tk.Frame(self)
 
         self.search = tk.StringVar(self)
-        self.search.trace("w", lambda e, f, g: self.create_listbox(lb_frame))
+        # self.search.trace("w", lambda e, f, g: self.create_listbox(self.lb_frame))
 
-        lb_frame.rowconfigure(0, weight=1)
-        lb_frame.rowconfigure(1, weight=4)
+        self.lb_frame.rowconfigure(0, weight=1)
+        self.lb_frame.rowconfigure(1, weight=4)
 
-        lb_frame.columnconfigure(0, weight=1)
+        self.lb_frame.columnconfigure(0, weight=1)
 
-        self.create_listbox(lb_frame)
-        self.create_searchbox(lb_frame)
-        lb_frame.grid(row=0, column=0, sticky=tk.NSEW)
+        self.create_listbox(self.lb_frame)
+        self.create_searchbox(self.lb_frame)
+        self.lb_frame.grid(row=0, column=0, sticky=tk.NSEW)
 
         self.frame_entry()
         self.frame_buttons().grid(row=1, column=0, columnspan=2, sticky=tk.NSEW)
@@ -77,6 +77,8 @@ class InventoryGui(Gui):
 
         list_var = []
         for i in self.parent.inv.index.tolist():
+            # print(self.search.get().lower())
+            # print(self.parent.inv["Name"][i])
             if self.search.get().lower() in self.parent.inv["Name"][i].lower() or self.search.get().lower() \
                     in self.parent.inv["Description"][i].lower():
                 list_var.append(str(i) + " : " + self.parent.inv["Name"][i])
@@ -157,7 +159,6 @@ class InventoryGui(Gui):
             year = 0
 
             for i in self.parent.reqs.index.tolist():
-                print(str(self.parent.reqs["Item #"][i]) + "\n")
                 if self.parent.reqs["Item #"][i] == item_num \
                    and date.fromordinal(self.parent.reqs["Ordinal"][i]).year == date.today().year:
                     year += self.parent.reqs["Amount Taken"][i]
@@ -186,8 +187,22 @@ class InventoryGui(Gui):
             self.year_label.configure(text="Used this year: " + self.year.get())
 
     def create_searchbox(self, parent):
-        sb = tk.Entry(parent, textvariable=self.search, font=(FONT, 25))
-        sb.grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=10)
+        frm = tk.Frame(parent)
+
+        frm.rowconfigure(0, weight=1)
+
+        frm.columnconfigure(0, weight=3)
+        frm.columnconfigure(1, weight=1)
+
+        sb = tk.Entry(frm, textvariable=self.search, font=(FONT, 25))
+        sb.grid(row=0, column=0, sticky=tk.NSEW, padx=25, pady=25)
+
+        b = tk.Button(frm, text="Search", font=(FONT, 25), command=lambda: self.create_listbox(self.lb_frame))
+        b.grid(row=0, column=1, sticky=tk.NSEW, padx=25, pady=25)
+
+        sb.bind("<Return>", lambda e: self.create_listbox(self.lb_frame))
+
+        frm.grid(row=0, column=0, sticky=tk.NSEW)
     # TODO add button to edit items. Need to be able to change each column of the dataframe. Store in a new dataframe,
     #  then overwrite old one (save backup of old csv?). Add a confirmation window. Make sure there aren't multiple
     #  items with the same number
