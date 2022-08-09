@@ -142,6 +142,7 @@ class AuditGui(Gui):
     def commit(self):
         quantities = self.parent.inv["Quantity"].tolist()
         diff = [0]*168
+        flag = False
 
         for i in self.items:
             try:
@@ -150,15 +151,25 @@ class AuditGui(Gui):
                 quantities[idx] = int(i[0].get())
                 diff[idx] = current - int(i[0].get())
             except ValueError:
-                root = tk.Tk()
-                root.title("That's Clear")
-                tk.Label(root, text="You've left an item count blank. Items with no count will be "
-                                    "assumed to be correct. Click confirm to push the audit.", font=(FONT, 25)).pack()
-                frm = tk.Frame(root)
-                frm.pack()
-                tk.Button(frm, text="Back", command=self.destroy).pack(side=tk.LEFT, padx=25, pady=25)
-                tk.Button(frm, text="Confirm", command=lambda: self.confirm(root)).pack(side=tk.LEFT, padx=25, pady=25)
+                flag = True
 
-    def confirm(self, root):
-        # self.parent.inv
-        root.destroy()
+        if flag:
+            root = tk.Tk()
+            root.title("That's Clear")
+            tk.Label(root, text="You've left an item count blank. Items with no count will be "
+                                "assumed to be correct. Click confirm to push the audit.", font=(FONT, 25)).pack()
+            frm = tk.Frame(root)
+            frm.pack()
+            tk.Button(frm, text="Back", command=self.destroy).pack(side=tk.LEFT, padx=25, pady=25)
+            tk.Button(frm, text="Confirm", command=lambda: self.confirm(diff, root=root)) \
+                .pack(side=tk.LEFT, padx=25, pady=25)
+        else:
+            self.confirm(diff)
+
+    def confirm(self, diff, root=None):
+        self.parent.write_sheet("inv", self.parent.inv)
+        diff.insert(0, date.today().toordinal())
+        diff.insert(0, "Drag formula from above!")
+        self.parent.append_row("aud", diff)
+        if root is not None:
+            root.destroy()

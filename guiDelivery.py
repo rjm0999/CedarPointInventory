@@ -8,7 +8,7 @@ class DeliveryGui(Gui):
 
         self.del_list = []
         self.var_list = []
-        self.department = tk.StringVar()
+        self.company = tk.StringVar(value="Select Company")
         self.entry_parent = None
 
         self.configure_parent()
@@ -60,13 +60,15 @@ class DeliveryGui(Gui):
 
         tk.Label(frame_buttons, text=date.today().isoformat(), font=(FONT, 25))\
             .grid(row=0, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
+        entry = tk.Entry(frame_buttons, textvariable=self.company, font=(FONT, 25))
+        entry.grid(row=1, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         self.dropdown(frame_buttons)
         tk.Button(frame_buttons, text="Commit", font=(FONT, 25), command=self.commit)\
-            .grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
-        tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
             .grid(row=3, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
-        tk.Button(frame_buttons, text="History", font=(FONT, 25), command=self.parent.del_history_gui)\
+        tk.Button(frame_buttons, text="Add Row", font=(FONT, 25), command=self.add_row)\
             .grid(row=4, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
+        tk.Button(frame_buttons, text="History", font=(FONT, 25), command=self.parent.del_history_gui)\
+            .grid(row=5, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
         # tk.Button(frame_buttons, text="Stocking Items", font=(FONT, 25), command=self.daily_stocking)\
         #    .grid(row=5, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
 
@@ -78,13 +80,14 @@ class DeliveryGui(Gui):
         ---------
         frm : the parent frame to contain the dropdown
         """
-        dept_list = []
-        for i in self.parent.departments.index.tolist():
-            dept_list.append(str(i) + " - " + self.parent.departments["Dept"][i])
+        company_list = []
+        for i in self.parent.delivery["Company"].tolist():
+            if i not in company_list:
+                company_list.append(str(i))
 
-        dd = tk.OptionMenu(frm, self.department, *dept_list)
+        dd = tk.OptionMenu(frm, self.company, *company_list)
         dd.config(font=(FONT, 25), width=18)
-        dd.grid(row=1, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
+        dd.grid(row=2, column=0, sticky=tk.NSEW, padx=(25, 50), pady=25)
 
     def frame_canvas(self):
         """
@@ -189,7 +192,7 @@ class DeliveryGui(Gui):
             frm.pack()
             tk.Button(frm, text="Yes", command=lambda: self.on_purpose(root)).pack(side=tk.LEFT, padx=25, pady=25)
             tk.Button(frm, text="No", command=root.destroy).pack(side=tk.RIGHT, padx=25, pady=25)
-        elif self.department.get() == "":
+        elif self.company.get() == "" or self.company.get() == "Select Company":
             root = tk.Tk()
             root.title("That's Clear")
             tk.Label(root, text="Please choose the department the items are being signed out to.", font=(FONT, 25))\
@@ -220,14 +223,15 @@ class DeliveryGui(Gui):
                 item_quantity = i[2].get()
                 if item_quantity != "" and item_number != "":
                     self.parent.inv.at[int(item_number), "Quantity"] += int(item_quantity)
-                    del_info = [len(self.parent.delivery.index) + 1,  # delivery num
-                                item_number,  # item number
+                    del_info = [item_number,  # item number
+                                len(self.parent.delivery.index) + 1,  # delivery num
                                 item_quantity,  # quantity
                                 self.parent.inv.at[int(item_number), "Unit"],  # Unit
-                                "Company",  # Company
-                                str(date.toordinal(date.today()))]  # date
+                                self.company.get(),  # Company
+                                str(date.toordinal(date.today())),  # date
+                                "Drag down formula from above!"]
                     self.parent.append_row("del", del_info)
-                    self.parent.delivery.loc[len(self.parent.delivery.index) + 1] = del_info
+                    self.parent.delivery.loc[len(self.parent.delivery.index) + 1] = del_info[1:-1]
             self.parent.write_sheet("inv", self.parent.inv)
             self.parent.delivery_gui()
         except KeyError:
@@ -269,8 +273,8 @@ class DeliveryHistoryGui(Gui):
                           [range(1, 13), range(1, 32), range(2022, date.today().year + 1)]]
         self.date_opts = [[], []]
 
-        self.early = date.today()
-        self.late = date.today()
+        self.early = date(date.today().year, 1, 1)
+        self.late = date(date.today().year, 12, 31)
 
         self.lb = self.create_listbox()
 
@@ -313,11 +317,18 @@ class DeliveryHistoryGui(Gui):
         list_var = []
         keys = self.parent.delivery.index.tolist()
         idx = 0
+
+        depts_list = []
+        for i in self.parent.delivery["Company"]:
+            if i not in depts_list:
+                depts_list.append(i)
+
         while idx <= self.parent.delivery.shape[0] - 1:
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.delivery["Item #"][key])]\
-                   .get() and self.early.toordinal() <= self.parent.delivery["Ordinal"][key] <= self.late.toordinal():
+                   .get() and self.early.toordinal() <= self.parent.delivery["Ordinal"][key] <= self.late.toordinal()\
+                    and not self.cb_dept[depts_list.index(self.parent.delivery["Company"][key])].get():
                     item = str(self.parent.delivery["Item #"][key])
                     while len(item) < 10:
                         item += " "
@@ -356,7 +367,8 @@ class DeliveryHistoryGui(Gui):
                         item += " "
 
                     item += str(self.parent.delivery["Company"][key])
-                    while len(item) < 65:
+                    item = item[0:65]
+                    while len(item) < 70:
                         item += " "
 
                     item += str(date.fromordinal(self.parent.delivery["Ordinal"][key]))
@@ -383,9 +395,8 @@ class DeliveryHistoryGui(Gui):
         canvas1 = self.create_canvas(frm, "itemnum", (50, 0))
         canvas1.grid(row=0, column=0, sticky=tk.NSEW)
 
-        # TODO current does department, change to company?
-        # canvas2 = self.create_canvas(frm, "dept", (50, 0))
-        # canvas2.grid(row=1, column=0, sticky=tk.NSEW)
+        canvas2 = self.create_canvas(frm, "comp", (50, 0))
+        canvas2.grid(row=1, column=0, sticky=tk.NSEW)
 
         canvas3 = self.create_canvas(frm, "date", (50, 50))
         canvas3.grid(row=2, column=0, sticky=tk.NSEW)
@@ -427,21 +438,22 @@ class DeliveryHistoryGui(Gui):
                 tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
-        elif string == "dept":
-            # not used in this one TODO change to company?
+        elif string == "comp":
             all_depts = tk.Checkbutton(parent, text="<Select/Deselect All>", variable=self.cb_all_depts, onvalue=False,
                                        offvalue=True, anchor=tk.W, font=(FONT, 10))
             all_depts.pack(fill=tk.BOTH, expand=True)
             self.cb_all_depts.trace_add("write", lambda e, f, g: self.trace_all(self.cb_all_depts, self.cb_dept))
 
             idx = 0
-            depts_list = self.parent.departments.index.tolist()
+            depts_list = []
+            for i in self.parent.delivery["Company"]:
+                if i not in depts_list:
+                    depts_list.append(i)
             while idx < len(depts_list):
                 boo = tk.BooleanVar()
                 self.cb_dept.append(boo)
                 boo.trace_id = boo.trace_add("write", self.bool_change)
-                text = str(depts_list[idx]) + " - " + self.parent.departments.iat[idx, 0]
-                tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
+                tk.Checkbutton(parent, text=depts_list[idx], variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
                 idx += 1
         elif string == "date":
@@ -485,7 +497,7 @@ class DeliveryHistoryGui(Gui):
         else:
             print("you forgot to program me, dum dum (" + string + ")")
 
-    def bool_change(self):
+    def bool_change(self, a, b, c):
         self.lb = self.create_listbox()
 
     def trace_all(self, boo, var_list):

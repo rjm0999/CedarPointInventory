@@ -81,7 +81,7 @@ class Root(tk.Tk):
             return pd.DataFrame(records).astype(types).set_index("Req #")
         elif sheet == "ord":
             records = self.sh.worksheet("Order Data").get_all_records()
-            types = {"Order #": int, "Built": bool, "Fulfilled": bool, "Req": bool}
+            types = {"Order #": int}
             return pd.DataFrame(records).astype(types).set_index("Order #")
         elif sheet == "del":
             records = self.sh.worksheet("Deliveries").get_all_records()
@@ -103,33 +103,31 @@ class Root(tk.Tk):
 
     def write_sheet(self, sheet, df):
         if sheet == "inv":
-            new_cols = df.columns.values.tolist().insert(0, "Number")
+            new_cols = df.columns.values.tolist()
+            new_cols.insert(0, "Item #")
             new_vals = df.values.tolist()
-            i = 0
-            while i < len(new_vals):
-                new_vals.insert(0, df.iloc[0][i])
-            self.sh.worksheet("Inventory-Stock Data").update(new_cols + new_vals)
+            for i in new_vals:
+                i.insert(0, df.index.tolist()[new_vals.index(i)])
+            self.sh.worksheet("Inventory-Stock").update([new_cols] + new_vals)
         elif sheet == "req":
             new_cols = df.columns.values.tolist().insert(0, "Req #")
             new_vals = df.values.tolist()
-            i = 0
-            while i < len(new_vals):
-                new_vals.insert(0, df.iloc[0][i])
-            self.sh.worksheet("Requisitions").update(new_cols + new_vals)
+            for i in new_vals:
+                i.insert(0, df.index.tolist()[new_vals.index(i)])
+            self.sh.worksheet("Requisitions").update([new_cols] + new_vals)
         elif sheet == "ord":
-            new_cols = df.columns.values.tolist().insert(0, "Order Num")
+            new_cols = df.columns.values.tolist()
+            new_cols.insert(0, "Order #")
             new_vals = df.values.tolist()
-            i = 0
-            while i < len(new_vals):
-                new_vals.insert(0, df.iloc[0][i])
-            self.sh.worksheet("Order Data").update(new_cols + new_vals)
+            for i in new_vals:
+                i.insert(0, df.index.tolist()[new_vals.index(i)])
+            self.sh.worksheet("Order Data").update([new_cols] + new_vals)
         elif sheet == "del":
             new_cols = df.columns.values.tolist().insert(0, "Delivery #")
             new_vals = df.values.tolist()
-            i = 0
-            while i < len(new_vals):
-                new_vals.insert(0, df.iloc[0][i])
-            self.sh.worksheet("Deliveries").update(new_cols + new_vals)
+            for i in new_vals:
+                i.insert(0, df.index.tolist()[new_vals.index(i)])
+            self.sh.worksheet("Deliveries").update([new_cols] + new_vals)
         else:
             print("uh oh, you did it wrong, ya big goof")
 
@@ -141,7 +139,7 @@ class Root(tk.Tk):
         elif sheet == "del":
             self.sh.worksheet("Deliveries").append_row(list_var)
         elif sheet == "aud":
-            self.sh.worksheet("Audit History").append_row(list_var, "B1")
+            self.sh.worksheet("Audit History").append_row(list_var)
 
     def update_reqs(self):
         df = self.read_sheet("req")
@@ -183,3 +181,6 @@ root.mainloop()
 # TODO change to menu bar at top of window, add ability to open a new window with a searchable list of all items. Might
 #  need to look into basic multithreading to have both guis be usable. Shouldn't be too hard, since they won't be
 #  talking to each other
+
+# TODO add users tab, allows you to enter a persons name and email, and the program will share the google
+#  drive with that email

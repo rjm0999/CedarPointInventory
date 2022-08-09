@@ -32,7 +32,6 @@ class InventoryGui(Gui):
         self.lb_frame = tk.Frame(self)
 
         self.search = tk.StringVar(self)
-        # self.search.trace("w", lambda e, f, g: self.create_listbox(self.lb_frame))
 
         self.lb_frame.rowconfigure(0, weight=1)
         self.lb_frame.rowconfigure(1, weight=4)
@@ -77,8 +76,6 @@ class InventoryGui(Gui):
 
         list_var = []
         for i in self.parent.inv.index.tolist():
-            # print(self.search.get().lower())
-            # print(self.parent.inv["Name"][i])
             if self.search.get().lower() in self.parent.inv["Name"][i].lower() or self.search.get().lower() \
                     in self.parent.inv["Description"][i].lower():
                 list_var.append(str(i) + " : " + self.parent.inv["Name"][i])

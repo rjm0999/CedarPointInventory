@@ -8,7 +8,7 @@ class OrderGui(Gui):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.department = tk.StringVar()
+        self.department = None
 
         self.configure_parent()
         self.configure_self()
@@ -82,6 +82,8 @@ class OrderGui(Gui):
 
         self.lb2_frame = tk.Frame(self)
 
+        self.parent.orders = self.parent.read_sheet("ord")
+
         self.lb_list = []
         for i in self.parent.orders.index.tolist():
             string = str(i)
@@ -123,23 +125,9 @@ class OrderGui(Gui):
             string = self.lb_list[self.lb2.curselection()[0]]
             self.order_num = int(string[0:string.index(" ")])
 
-            temp = self.parent.orders["Built"][self.order_num]
-            if temp == "TRUE":
-                self.check_vars[0].set(1)
-            else:
-                self.check_vars[0].set(0)
-
-            temp = self.parent.orders["Fulfilled"][self.order_num]
-            if temp == "TRUE":
-                self.check_vars[1].set(1)
-            else:
-                self.check_vars[1].set(0)
-
-            temp = self.parent.orders["Req"][self.order_num]
-            if temp == "TRUE":
-                self.check_vars[2].set(1)
-            else:
-                self.check_vars[2].set(0)
+            self.check_vars[0].set(True if self.parent.orders["Built"][self.order_num] == "TRUE" else False)
+            self.check_vars[1].set(True if self.parent.orders["Fulfilled"][self.order_num] == "TRUE" else False)
+            self.check_vars[2].set(True if self.parent.orders["Req"][self.order_num] == "TRUE" else False)
 
             self.create_lb1()
 
@@ -155,16 +143,16 @@ class OrderGui(Gui):
 
         frm.columnconfigure(0, weight=1)
 
-        built_var = tk.IntVar(self)
+        built_var = tk.BooleanVar(self)
         built = tk.Checkbutton(frm, text="Built", variable=built_var, font=(FONT, 25), command=self.update_built)
         built.grid(row=0, column=0, sticky=tk.NSEW, pady=(0, 5))
 
-        fulfilled_var = tk.IntVar(self)
+        fulfilled_var = tk.BooleanVar(self)
         fulfilled = tk.Checkbutton(frm, text="Fulfilled", variable=fulfilled_var, font=(FONT, 25),
                                    command=self.update_fulfilled)
         fulfilled.grid(row=1, column=0, sticky=tk.NSEW, pady=5)
 
-        req_var = tk.IntVar(self)
+        req_var = tk.BooleanVar(self)
         req = tk.Checkbutton(frm, text="Entered in Req", variable=req_var, font=(FONT, 25), command=self.update_req)
         req.grid(row=2, column=0, sticky=tk.NSEW, pady=5)
 
@@ -174,7 +162,7 @@ class OrderGui(Gui):
         edit = tk.Button(frm, text="Edit selected order", font=(FONT, 25))
         edit.grid(row=4, column=0, sticky=tk.NSEW, pady=5)
 
-        enter = tk.Button(frm, text="Add selected order to requisitions", font=(FONT, 25))
+        enter = tk.Button(frm, text="Add selected order to requisitions", font=(FONT, 25), command=self.enter_order)
         enter.grid(row=5, column=0, sticky=tk.NSEW, pady=(5, 0))
 
         frm.grid(row=0, column=1, sticky=tk.NSEW, rowspan=2, padx=25, pady=10)
@@ -192,7 +180,8 @@ class OrderGui(Gui):
                 flag = True
 
             orders.loc[self.order_num, "Built"] = str(bool(self.check_vars[0].get())).upper()
-            self.parent.write_sheet("ord", orders) if flag else None
+            if flag:
+                self.parent.write_sheet("ord", orders)
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 
@@ -207,11 +196,12 @@ class OrderGui(Gui):
                 flag = True
 
             if not bool(self.check_vars[0].get()):
-                self.check_vars[0].set(1)
+                self.check_vars[0].set(True)
                 self.update_built(orders)
 
             orders.loc[self.order_num, "Fulfilled"] = str(bool(self.check_vars[1].get())).upper()
-            self.parent.write_sheet("ord", orders) if flag else None
+            if flag:
+                self.parent.write_sheet("ord", orders)
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 
@@ -226,11 +216,12 @@ class OrderGui(Gui):
                 flag = True
 
             if not bool(self.check_vars[1].get()):
-                self.check_vars[1].set(1)
+                self.check_vars[1].set(True)
                 self.update_fulfilled(orders)
 
             orders.loc[self.order_num, "Req"] = str(bool(self.check_vars[2].get())).upper()
-            self.parent.write_sheet("ord", orders) if flag else None
+            if flag:
+                self.parent.write_sheet("ord", orders)
             self.create_lb2()
             self.lb2.select_set(orders.index.tolist().index(self.order_num))
 
@@ -241,7 +232,37 @@ class OrderGui(Gui):
         pass
 
     def enter_order(self):
-        pass
+        if self.order_num is not None and self.parent.orders["Req"][self.order_num].upper() == "FALSE":
+            order = self.parent.orders.loc[self.order_num]
+            if type(order["Item Num"]) is str:
+                item_number = order["Item Num"].split(", ")
+                item_quantity = order["Quantity"].split(", ")
+            else:
+                item_number = [order["Item Num"]]
+                item_quantity = [order["Quantity"]]
+
+            self.parent.inv = self.parent.read_sheet("inv")
+            self.parent.reqs = self.parent.read_sheet("req")
+            for i in item_number:
+                idx = item_number.index(i)
+                if item_quantity[idx] != "" and i != "":
+                    self.parent.inv.at[int(i), "Quantity"] -= int(item_quantity[idx])
+                    department_num = self.parent.orders["Department"][self.order_num]
+                    req_info = [int(i),  # item number
+                                len(self.parent.reqs.index) + 1,  # req num
+                                self.parent.inv.at[int(i), "Description"],  # item description
+                                int(item_quantity[idx]),  # quantity
+                                self.parent.inv.at[int(i), "Unit"],  # Unit
+                                int(department_num),  # department number
+                                self.parent.departments["Dept"][department_num],  # department name
+                                str(date.toordinal(date.today())),  # date
+                                "Drag formula down"]  # date
+                    self.parent.append_row("req", req_info)
+                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = req_info[1:-1]
+            self.parent.write_sheet("inv", self.parent.inv)
+            self.check_vars[2].set(True)
+            self.update_req()
+            self.create_lb2()
 
     # add order stuff
     def frame_canvas(self):
@@ -252,6 +273,8 @@ class OrderGui(Gui):
         root = tk.Tk()
         root.title("Add new warehouse request")
         root.state("zoomed")
+
+        self.department = tk.StringVar(root, value="Select Department")
 
         root.columnconfigure(0, weight=4)
         root.columnconfigure(1, weight=1)
@@ -314,7 +337,6 @@ class OrderGui(Gui):
         ---------
         frm : the parent frame to contain the dropdown
         """
-        # FIXME text doesn't appear in option menu, still changes the string in the string var
         dept_list = []
         for i in self.parent.departments.index.tolist():
             dept_list.append(str(i) + " - " + self.parent.departments["Dept"][i])
@@ -374,7 +396,6 @@ class OrderGui(Gui):
         """
         add current input as a new order
         """
-        # TODO rewrite to add to order data sheet
         self.parent.inv = self.parent.read_sheet("inv")
         self.parent.reqs = self.parent.read_sheet("req")
         try:

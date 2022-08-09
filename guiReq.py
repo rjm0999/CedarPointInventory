@@ -226,16 +226,17 @@ class ReqGui(Gui):
                         department = department.replace(j, "")
                     for j in department:
                         department_num = department_num.replace(j, "")
-                    req_info = [len(self.parent.reqs.index) + 1,  # req num
-                                item_number,  # item number
+                    req_info = [item_number,  # item number
+                                len(self.parent.reqs.index) + 1,  # req num
                                 self.parent.inv.at[int(item_number), "Description"],  # item description
                                 item_quantity,  # quantity
                                 self.parent.inv.at[int(item_number), "Unit"],  # Unit
                                 department_num,  # department number
                                 department.replace(" - ", ""),  # department name
-                                str(date.toordinal(date.today()))]  # date
+                                str(date.toordinal(date.today())),  # date
+                                "Drag formula from above"]
                     self.parent.append_row("req", req_info)
-                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = req_info
+                    self.parent.reqs.loc[len(self.parent.reqs.index) + 1] = req_info[1:-1]
             self.parent.write_sheet("inv", self.parent.inv)
             self.parent.req_gui()
         except KeyError:
@@ -341,7 +342,8 @@ class ReqHistoryGui(Gui):
             key = int(keys[idx])
             try:
                 if not self.cb_item_num[self.parent.inv.index.tolist().index(self.parent.reqs["Item #"][key])].get() \
-                   and not self.cb_dept[self.parent.departments.index.tolist().index(self.parent.reqs["Dep Code"][key])].get() \
+                   and not self.cb_dept[self.parent.departments.index.tolist().
+                        index(self.parent.reqs["Dep Code"][key])].get() \
                    and self.early.toordinal() <= self.parent.reqs["Ordinal"][key] <= self.late.toordinal():
                     item = str(self.parent.reqs["Item #"][key])
                     while len(item) < 10:
