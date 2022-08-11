@@ -314,6 +314,8 @@ class DeliveryHistoryGui(Gui):
         except AttributeError:
             pass
 
+        self.parent.delivery = self.parent.read_sheet("del")
+
         list_var = []
         keys = self.parent.delivery.index.tolist()
         idx = 0

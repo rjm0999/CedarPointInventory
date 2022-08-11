@@ -123,8 +123,8 @@ class AuditGui(Gui):
         return scroll
 
     def update_labels(self, tv1, tv2, tv3):
-        idx = self.items.index([tv1, tv2, tv3])
-        current = self.parent.inv["Quantity"].iloc[idx]
+        idx = int(self.items.index([tv1, tv2, tv3]))
+        current = int(self.parent.inv["Quantity"].iloc[idx])
 
         try:
             variance = current - int(tv1.get())
@@ -141,15 +141,16 @@ class AuditGui(Gui):
 
     def commit(self):
         quantities = self.parent.inv["Quantity"].tolist()
-        diff = [0]*168
+        diff = [int(0)]*168
         flag = False
 
         for i in self.items:
             try:
-                idx = self.items.index(i)
-                current = self.parent.inv["Quantity"].iloc[idx]
+                idx = int(self.items.index(i))
+                current = int(self.parent.inv["Quantity"].iloc[idx])
                 quantities[idx] = int(i[0].get())
                 diff[idx] = current - int(i[0].get())
+                self.parent.inv["Quantity"].iat[idx] = quantities[idx]
             except ValueError:
                 flag = True
 
@@ -173,3 +174,5 @@ class AuditGui(Gui):
         self.parent.append_row("aud", diff)
         if root is not None:
             root.destroy()
+
+        self.parent.audit_gui()

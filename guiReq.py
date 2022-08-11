@@ -259,6 +259,7 @@ class ReqGui(Gui):
                 l1.config(text="Unknown Item Number")
 
     def daily_stocking(self):
+        # TODO make the item numbers uneditable, have a flag so item quantities can be left blank
         stocking_list = [20200, 30000, 102700, 35300, 80000, 80100, 91100, 35700, 45000, 35500, 35600, 90500, 90700,
                          20500, 61300,  90000, 90100, 70000, 70100, 70200, 70300, 10200, 90200, 61200, 61000, 60400,
                          60500, 60000,  61900, 81700, 36000, 60700, 60800, 70400]
@@ -327,6 +328,7 @@ class ReqHistoryGui(Gui):
         self.rowconfigure(1, weight=1)
 
     def create_listbox(self):
+        print("create_listbox")
         """
         Create a tkinter listbox
         """
@@ -334,6 +336,8 @@ class ReqHistoryGui(Gui):
             self.lb.destroy()
         except AttributeError:
             pass
+
+        self.parent.reqs = self.parent.read_sheet("req")
 
         list_var = []
         keys = self.parent.reqs.index.tolist()
@@ -447,7 +451,7 @@ class ReqHistoryGui(Gui):
                 item_num = item_num_list[idx]
                 boo = tk.BooleanVar()
                 self.cb_item_num.append(boo)
-                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_item_num))
+                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change())
                 text = str(item_num) + " - " + self.parent.inv["Name"][item_num]
                 tk.Checkbutton(parent, text=text, variable=self.cb_item_num[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
@@ -463,7 +467,7 @@ class ReqHistoryGui(Gui):
             while idx < len(self.parent.departments.index.tolist()):
                 boo = tk.BooleanVar()
                 self.cb_dept.append(boo)
-                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change(e, self.cb_dept))
+                boo.trace_id = boo.trace_add("write", lambda e, f, g: self.bool_change())
                 text = str(depts_list[idx]) + " - " + self.parent.departments.iat[idx, 0]
                 tk.Checkbutton(parent, text=text, variable=self.cb_dept[idx], onvalue=False, offvalue=True,
                                anchor=tk.W, font=(FONT, 10)).pack(fill=tk.BOTH, expand=True)
@@ -510,14 +514,16 @@ class ReqHistoryGui(Gui):
             print("you forgot to program me, dum dum (" + string + ")")
 
     def bool_change(self):
+        print("bool_change")
         self.lb = self.create_listbox()
 
     def trace_all(self, boo, var_list):
+        print("trace_all")
         temp = boo.get()
         for i in var_list:
             i.trace_vdelete("w", i.trace_id)
             i.set(temp)
-            i.trace_id = i.trace_add("write", lambda e, f, g: self.bool_change(e, var_list))
+            i.trace_id = i.trace_add("write", lambda e, f, g: self.bool_change())
         self.lb = self.create_listbox()
 
     def frame_buttons(self):
@@ -539,6 +545,7 @@ class ReqHistoryGui(Gui):
         return frm
 
     def set_date(self):
+        print("set_date")
         e_day = int(self.date_vars[0][1].get())
         e_month = int(self.date_vars[0][0].get())
         e_year = int(self.date_vars[0][2].get())
@@ -622,34 +629,34 @@ class ReqHistoryGui(Gui):
         menu.delete(0, tk.END)
         for integer in self.date_vals[0][0]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(0, 0, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((0, 0, string)))
 
         menu = self.date_opts[0][1]["menu"]
         menu.delete(0, tk.END)
         for integer in self.date_vals[0][1]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(0, 1, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((0, 1, string)))
 
         menu = self.date_opts[0][2]["menu"]
         menu.delete(0, tk.END)
         for integer in self.date_vals[0][2]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(0, 2, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((0, 2, string)))
 
         menu = self.date_opts[1][0]["menu"]
         menu.delete(0, tk.END)
         for integer in self.date_vals[1][0]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(1, 0, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((1, 0, string)))
 
         menu = self.date_opts[1][1]["menu"]
         menu.delete(0, tk.END)
         for integer in self.date_vals[1][1]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(1, 1, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((1, 1, string)))
 
         menu = self.date_opts[1][2]["menu"]
         menu.delete(0, tk.END)
         for integer in self.date_vals[1][2]:
             string = str(integer)
-            menu.add_command(label=string, command=lambda e=self, f=(1, 2, string): self.menu_command(f))
+            menu.add_command(label=string, command=lambda e, f: self.menu_command((1, 2, string)))
