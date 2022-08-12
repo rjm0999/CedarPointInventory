@@ -92,13 +92,15 @@ class OrderGui(Gui):
             string += "Current Status: "
             if self.parent.orders["Built"][i] == "FALSE" or not self.parent.orders["Built"][i]:
                 string += "needs assembly"
+                self.lb_list.append(string)
             elif self.parent.orders["Fulfilled"][i] == "FALSE" or not self.parent.orders["Fulfilled"][i]:
                 string += "awaiting pickup or delivery"
+                self.lb_list.append(string)
             elif self.parent.orders["Req"][i] == "FALSE" or not self.parent.orders["Req"][i]:
                 string += "fulfilled"
-            else:
-                string += "complete"
-            self.lb_list.append(string)
+                self.lb_list.append(string)
+            '''else:
+                string += "complete"'''
 
         self.lb2_frame.rowconfigure(0, weight=1)
         self.lb2_frame.rowconfigure(1, weight=4)
@@ -405,6 +407,7 @@ class OrderGui(Gui):
                 department = department.replace(j, "")
             for j in department:
                 department_num = department_num.replace(j, "")
+            department_num = int(department_num)
 
             item_nums = ""
             item_quantities = ""
@@ -425,7 +428,7 @@ class OrderGui(Gui):
                           item_quantities[0:-2]]  # Item Quantities
 
             self.parent.append_row("ord", order_info)
-            self.parent.orders.loc[order_num] = order_info
+            self.parent.orders.loc[order_num] = order_info[1:]
             self.create_lb2()
             root.destroy()
         except KeyError:

@@ -19,6 +19,7 @@ class Root(tk.Tk):
         self.inv = self.read_sheet("inv")
         self.reqs = self.read_sheet("req")
         self.orders = self.read_sheet("ord")
+        print(self.orders.shape)
         self.delivery = self.read_sheet("del")
         self.departments = self.read_sheet("dep")
 
